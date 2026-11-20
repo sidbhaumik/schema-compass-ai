@@ -1,0 +1,28 @@
+# Schema Compass configuration. Paths are relative to this file.
+
+[source]                      # the organization you are migrating FROM
+type = "csv"
+path = "demo/source_metadata.csv"
+# type = "snowflake"; connection = "my_conn"; table = "DB.SCHEMA.SOURCE_METADATA"
+
+[target]                      # the organization whose data products you are building
+type = "csv"
+path = "demo/target_metadata.csv"
+# type = "databricks"; profile = "my-profile"; catalogs = ["lumen"]; warehouse_id = "..."
+
+[knowledge]                   # S2T sheets (.csv/.xlsx), Slack exports (.json), notes (.md/.txt)
+paths = ["demo/knowledge"]
+
+[feedback]
+db = "runs/feedback.db"
+
+[embeddings]                  # optional: pip install -r requirements-semantic.txt
+# model = "sentence-transformers/all-MiniLM-L6-v2"
+
+[llm]                         # optional AI review; needs ANTHROPIC_API_KEY or `ant auth login`
+enabled = true
+model = "claude-opus-5-5"
+effort = "medium"
+
+[evaluation]
+gold = "demo/gold_mappings.csv"

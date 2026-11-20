@@ -1,0 +1,85 @@
+PLATFORM,TABLE_PHYSICAL_NAME,TABLE_LOGICAL_NAME,TABLE_DESCRIPTION,COLUMN_PHYSICAL_NAME,COLUMN_LOGICAL_NAME,COLUMN_DESCRIPTION,COLUMN_DATATYPE,COLUMN_LENGTH
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR,Order Header,"One row per customer order placed in store, web or app since 2019. Current system of record for order totals and status.",ORD_NBR,Order Number,Unique order number assigned at checkout.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR,Order Header,"One row per customer order placed in store, web or app since 2019. Current system of record for order totals and status.",CUST_ID,Customer Id,Loyalty or guest customer key.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR,Order Header,"One row per customer order placed in store, web or app since 2019. Current system of record for order totals and status.",ORD_DT,Order Date,Business date the order was placed (store local time).,DATE,
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR,Order Header,"One row per customer order placed in store, web or app since 2019. Current system of record for order totals and status.",ORD_STAT_CD,Order Status Code,"Lifecycle status: OPEN, SHIPPED, COMPLETE, CANCELLED.",VARCHAR(12),12
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR,Order Header,"One row per customer order placed in store, web or app since 2019. Current system of record for order totals and status.",TOT_AMT,Total Amount,"Order total after discounts, before tax, in order currency.","NUMBER(12,2)",
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR,Order Header,"One row per customer order placed in store, web or app since 2019. Current system of record for order totals and status.",CCY_CD,Currency Code,ISO 4217 currency of the order.,VARCHAR(3),3
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR,Order Header,"One row per customer order placed in store, web or app since 2019. Current system of record for order totals and status.",CHNL_CD,Channel Code,"Sales channel where the order was captured: STORE, WEB, APP.",VARCHAR(8),8
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR,Order Header,"One row per customer order placed in store, web or app since 2019. Current system of record for order totals and status.",STR_NBR,Store Number,Store that captured or fulfils the order.,"NUMBER(6,0)",
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR,Order Header,"One row per customer order placed in store, web or app since 2019. Current system of record for order totals and status.",CRT_TS,Created Timestamp,Timestamp the order record was created (UTC).,TIMESTAMP_NTZ,
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR_LGCY,Order Header Legacy,"Orders from the retired point-of-sale platform, 2012-2019. Frozen; not maintained.",ORD_NBR,Order Number,Order number from legacy POS.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR_LGCY,Order Header Legacy,"Orders from the retired point-of-sale platform, 2012-2019. Frozen; not maintained.",CUST_ID,Customer Id,Customer key from legacy POS.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR_LGCY,Order Header Legacy,"Orders from the retired point-of-sale platform, 2012-2019. Frozen; not maintained.",ORD_DT,Order Date,Date the order was placed.,DATE,
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR_LGCY,Order Header Legacy,"Orders from the retired point-of-sale platform, 2012-2019. Frozen; not maintained.",ORD_STAT_CD,Order Status Code,Legacy status code.,VARCHAR(4),4
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR_LGCY,Order Header Legacy,"Orders from the retired point-of-sale platform, 2012-2019. Frozen; not maintained.",TOT_AMT,Total Amount,Order total.,"NUMBER(12,2)",
+SNOWFLAKE,SRC_DW.SALES.ORD_HDR_LGCY,Order Header Legacy,"Orders from the retired point-of-sale platform, 2012-2019. Frozen; not maintained.",STR_NBR,Store Number,Store number.,"NUMBER(6,0)",
+SNOWFLAKE,SRC_DW.SALES.ORD_LN,Order Line,One row per product line on an order.,ORD_NBR,Order Number,Parent order number.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.SALES.ORD_LN,Order Line,One row per product line on an order.,LN_NBR,Line Number,Sequence of the line within the order.,"NUMBER(4,0)",
+SNOWFLAKE,SRC_DW.SALES.ORD_LN,Order Line,One row per product line on an order.,SKU_ID,SKU,Stock keeping unit purchased.,VARCHAR(20),20
+SNOWFLAKE,SRC_DW.SALES.ORD_LN,Order Line,One row per product line on an order.,QTY,Quantity,Units ordered on the line.,"NUMBER(6,0)",
+SNOWFLAKE,SRC_DW.SALES.ORD_LN,Order Line,One row per product line on an order.,UNIT_PRC,Unit Price,Selling price per unit before discount.,"NUMBER(10,2)",
+SNOWFLAKE,SRC_DW.SALES.ORD_LN,Order Line,One row per product line on an order.,DISC_AMT,Discount Amount,Total discount applied to the line.,"NUMBER(10,2)",
+SNOWFLAKE,SRC_DW.SALES.ORD_LN,Order Line,One row per product line on an order.,LN_TOT_AMT,Line Total Amount,Quantity times unit price less discount.,"NUMBER(12,2)",
+SNOWFLAKE,SRC_DW.CRM.CUST_MSTR,Customer Master,One row per registered loyalty customer.,CUST_ID,Customer Id,Surrogate customer key.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.CRM.CUST_MSTR,Customer Master,One row per registered loyalty customer.,FRST_NM,First Name,Given name.,VARCHAR(60),60
+SNOWFLAKE,SRC_DW.CRM.CUST_MSTR,Customer Master,One row per registered loyalty customer.,LST_NM,Last Name,Family name.,VARCHAR(80),80
+SNOWFLAKE,SRC_DW.CRM.CUST_MSTR,Customer Master,One row per registered loyalty customer.,EML_ADDR,Email Address,Primary email used for receipts and marketing.,VARCHAR(254),254
+SNOWFLAKE,SRC_DW.CRM.CUST_MSTR,Customer Master,One row per registered loyalty customer.,PHN_NBR,Phone Number,Mobile number in E.164 format.,VARCHAR(20),20
+SNOWFLAKE,SRC_DW.CRM.CUST_MSTR,Customer Master,One row per registered loyalty customer.,DOB,Date Of Birth,Customer birth date if provided.,DATE,
+SNOWFLAKE,SRC_DW.CRM.CUST_MSTR,Customer Master,One row per registered loyalty customer.,LYLTY_TIER_CD,Loyalty Tier Code,"Program tier: BRONZE, SILVER, GOLD.",VARCHAR(10),10
+SNOWFLAKE,SRC_DW.CRM.CUST_MSTR,Customer Master,One row per registered loyalty customer.,CRT_DT,Created Date,Date the customer record was created.,DATE,
+SNOWFLAKE,SRC_DW.CRM.CUST_MSTR,Customer Master,One row per registered loyalty customer.,OPT_IN_FLG,Opt In Flag,Y/N consent to receive promotional email.,VARCHAR(1),1
+SNOWFLAKE,SRC_DW.CRM.CUST_ADDR,Customer Address,Postal addresses per customer.,ADDR_ID,Address Id,Surrogate address key.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.CRM.CUST_ADDR,Customer Address,Postal addresses per customer.,CUST_ID,Customer Id,Owning customer.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.CRM.CUST_ADDR,Customer Address,Postal addresses per customer.,ADDR_LN1,Address Line 1,Street address first line.,VARCHAR(120),120
+SNOWFLAKE,SRC_DW.CRM.CUST_ADDR,Customer Address,Postal addresses per customer.,CITY_NM,City Name,City or town.,VARCHAR(80),80
+SNOWFLAKE,SRC_DW.CRM.CUST_ADDR,Customer Address,Postal addresses per customer.,ST_CD,State Code,State or province code.,VARCHAR(3),3
+SNOWFLAKE,SRC_DW.CRM.CUST_ADDR,Customer Address,Postal addresses per customer.,PSTL_CD,Postal Code,ZIP or postal code.,VARCHAR(10),10
+SNOWFLAKE,SRC_DW.CRM.CUST_ADDR,Customer Address,Postal addresses per customer.,CTRY_CD,Country Code,ISO 3166 alpha-2 country.,VARCHAR(2),2
+SNOWFLAKE,SRC_DW.CRM.CUST_ADDR,Customer Address,Postal addresses per customer.,ADDR_TYP_CD,Address Type Code,"BILLING, SHIPPING or HOME.",VARCHAR(10),10
+SNOWFLAKE,SRC_DW.MERCH.ITEM_MSTR,Item Master,One row per sellable SKU.,SKU_ID,SKU,Stock keeping unit.,VARCHAR(20),20
+SNOWFLAKE,SRC_DW.MERCH.ITEM_MSTR,Item Master,One row per sellable SKU.,ITEM_DESC,Item Description,Item description.,VARCHAR(120),120
+SNOWFLAKE,SRC_DW.MERCH.ITEM_MSTR,Item Master,One row per sellable SKU.,ITEM_LONG_DESC,Item Long Description,Marketing copy for the product detail page.,VARCHAR(4000),4000
+SNOWFLAKE,SRC_DW.MERCH.ITEM_MSTR,Item Master,One row per sellable SKU.,BRND_NM,Brand Name,Brand of the item.,VARCHAR(60),60
+SNOWFLAKE,SRC_DW.MERCH.ITEM_MSTR,Item Master,One row per sellable SKU.,CAT_CD,Category Code,Merchandise category.,VARCHAR(10),10
+SNOWFLAKE,SRC_DW.MERCH.ITEM_MSTR,Item Master,One row per sellable SKU.,SUBCAT_CD,Subcategory Code,Merchandise subcategory.,VARCHAR(10),10
+SNOWFLAKE,SRC_DW.MERCH.ITEM_MSTR,Item Master,One row per sellable SKU.,LIST_PRC,List Price,Regular retail price.,"NUMBER(10,2)",
+SNOWFLAKE,SRC_DW.MERCH.ITEM_MSTR,Item Master,One row per sellable SKU.,UOM_CD,Unit Of Measure Code,"EA, PK, LB.",VARCHAR(4),4
+SNOWFLAKE,SRC_DW.MERCH.ITEM_MSTR,Item Master,One row per sellable SKU.,ACTV_FLG,Active Flag,Y if the SKU can be sold.,VARCHAR(1),1
+SNOWFLAKE,SRC_DW.SUPPLY.INV_SNAP,Inventory Snapshot,Daily end-of-day inventory per store and SKU.,SNAP_DT,Snapshot Date,Business date of the snapshot.,DATE,
+SNOWFLAKE,SRC_DW.SUPPLY.INV_SNAP,Inventory Snapshot,Daily end-of-day inventory per store and SKU.,STR_NBR,Store Number,Store holding the stock.,"NUMBER(6,0)",
+SNOWFLAKE,SRC_DW.SUPPLY.INV_SNAP,Inventory Snapshot,Daily end-of-day inventory per store and SKU.,SKU_ID,SKU,Stock keeping unit.,VARCHAR(20),20
+SNOWFLAKE,SRC_DW.SUPPLY.INV_SNAP,Inventory Snapshot,Daily end-of-day inventory per store and SKU.,ON_HND_QTY,On Hand Quantity,Units physically in stock.,"NUMBER(9,0)",
+SNOWFLAKE,SRC_DW.SUPPLY.INV_SNAP,Inventory Snapshot,Daily end-of-day inventory per store and SKU.,ON_ORD_QTY,On Order Quantity,Units on open purchase orders.,"NUMBER(9,0)",
+SNOWFLAKE,SRC_DW.SUPPLY.INV_SNAP,Inventory Snapshot,Daily end-of-day inventory per store and SKU.,RSRV_QTY,Reserved Quantity,Units held for pending online orders.,"NUMBER(9,0)",
+SNOWFLAKE,SRC_DW.SUPPLY.SHPMT,Shipment,One row per parcel shipped to a customer.,SHPMT_ID,Shipment Id,Shipment key.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.SUPPLY.SHPMT,Shipment,One row per parcel shipped to a customer.,ORD_NBR,Order Number,Order being fulfilled.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.SUPPLY.SHPMT,Shipment,One row per parcel shipped to a customer.,CARR_CD,Carrier Code,Parcel carrier.,VARCHAR(10),10
+SNOWFLAKE,SRC_DW.SUPPLY.SHPMT,Shipment,One row per parcel shipped to a customer.,TRKG_NBR,Tracking Number,Carrier tracking number.,VARCHAR(40),40
+SNOWFLAKE,SRC_DW.SUPPLY.SHPMT,Shipment,One row per parcel shipped to a customer.,SHP_DT,Ship Date,Date the parcel left the warehouse.,DATE,
+SNOWFLAKE,SRC_DW.SUPPLY.SHPMT,Shipment,One row per parcel shipped to a customer.,DLVR_DT,Delivery Date,Date the carrier confirmed delivery.,DATE,
+SNOWFLAKE,SRC_DW.SUPPLY.SHPMT,Shipment,One row per parcel shipped to a customer.,SHPMT_STAT_CD,Shipment Status Code,"IN_TRANSIT, DELIVERED, EXCEPTION.",VARCHAR(12),12
+SNOWFLAKE,SRC_DW.SALES.RTN_TXN,Return Transaction,One row per returned order line.,RTN_ID,Return Id,Return key.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.SALES.RTN_TXN,Return Transaction,One row per returned order line.,ORD_NBR,Order Number,Original order.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.SALES.RTN_TXN,Return Transaction,One row per returned order line.,SKU_ID,SKU,Returned SKU.,VARCHAR(20),20
+SNOWFLAKE,SRC_DW.SALES.RTN_TXN,Return Transaction,One row per returned order line.,RTN_QTY,Return Quantity,Units returned.,"NUMBER(6,0)",
+SNOWFLAKE,SRC_DW.SALES.RTN_TXN,Return Transaction,One row per returned order line.,RTN_RSN_CD,Return Reason Code,"DAMAGED, WRONG_SIZE, CHANGED_MIND.",VARCHAR(20),20
+SNOWFLAKE,SRC_DW.SALES.RTN_TXN,Return Transaction,One row per returned order line.,RFND_AMT,Refund Amount,Amount refunded to the customer.,"NUMBER(10,2)",
+SNOWFLAKE,SRC_DW.SALES.RTN_TXN,Return Transaction,One row per returned order line.,RTN_DT,Return Date,Date the return was processed.,DATE,
+SNOWFLAKE,SRC_DW.STORE.STR_DIM,Store Dimension,One row per physical store.,STR_NBR,Store Number,Store key.,"NUMBER(6,0)",
+SNOWFLAKE,SRC_DW.STORE.STR_DIM,Store Dimension,One row per physical store.,STR_NM,Store Name,Display name of the store.,VARCHAR(80),80
+SNOWFLAKE,SRC_DW.STORE.STR_DIM,Store Dimension,One row per physical store.,RGN_CD,Region Code,Operating region.,VARCHAR(6),6
+SNOWFLAKE,SRC_DW.STORE.STR_DIM,Store Dimension,One row per physical store.,OPN_DT,Open Date,Date the store opened.,DATE,
+SNOWFLAKE,SRC_DW.STORE.STR_DIM,Store Dimension,One row per physical store.,SQ_FT,Square Feet,Selling floor area.,"NUMBER(8,0)",
+SNOWFLAKE,SRC_DW.STORE.STR_DIM,Store Dimension,One row per physical store.,STR_FMT_CD,Store Format Code,"MALL, OUTLET, STREET.",VARCHAR(8),8
+SNOWFLAKE,SRC_DW.MKTG.PROMO,Promotion,One row per promotion campaign.,PROMO_ID,Promotion Id,Promotion key.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.MKTG.PROMO,Promotion,One row per promotion campaign.,PROMO_NM,Promotion Name,Campaign name.,VARCHAR(100),100
+SNOWFLAKE,SRC_DW.MKTG.PROMO,Promotion,One row per promotion campaign.,STRT_DT,Start Date,First day the promotion is live.,DATE,
+SNOWFLAKE,SRC_DW.MKTG.PROMO,Promotion,One row per promotion campaign.,END_DT,End Date,Last day the promotion is live.,DATE,
+SNOWFLAKE,SRC_DW.MKTG.PROMO,Promotion,One row per promotion campaign.,DISC_PCT,Discount Percent,Percent off list price.,"NUMBER(5,2)",
+SNOWFLAKE,SRC_DW.MKTG.WEB_SESS,Web Session,One row per website or app browsing session.,SESS_ID,Session Id,Session key.,VARCHAR(40),40
+SNOWFLAKE,SRC_DW.MKTG.WEB_SESS,Web Session,One row per website or app browsing session.,CUST_ID,Customer Id,Signed-in customer if known.,"NUMBER(18,0)",
+SNOWFLAKE,SRC_DW.MKTG.WEB_SESS,Web Session,One row per website or app browsing session.,SESS_STRT_TS,Session Start Timestamp,When the session began.,TIMESTAMP_NTZ,
+SNOWFLAKE,SRC_DW.MKTG.WEB_SESS,Web Session,One row per website or app browsing session.,DVC_TYP,Device Type,"DESKTOP, MOBILE, TABLET.",VARCHAR(10),10
+SNOWFLAKE,SRC_DW.MKTG.WEB_SESS,Web Session,One row per website or app browsing session.,PG_VW_CNT,Page View Count,Pages viewed in the session.,"NUMBER(6,0)",

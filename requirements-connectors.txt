@@ -1,0 +1,4 @@
+-r requirements.txt
+snowflake-connector-python>=3,<5
+databricks-sdk>=0.30
+openpyxl>=3.1

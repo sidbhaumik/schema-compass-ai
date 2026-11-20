@@ -1,0 +1,13 @@
+{
+  "channel": "data-migration",
+  "messages": [
+    {"ts": "1760000000.000100", "user_name": "priya", "text": "For the lumen orders backfill, which source table do we use? I see both ORD_HDR and ORD_HDR_LGCY."},
+    {"ts": "1760000300.000200", "thread_ts": "1760000000.000100", "user_name": "marco", "text": "Use ORD_HDR. ORD_HDR_LGCY is frozen since 2019 and deprecated, so only union it in for pre-2019 history after SME sign-off."},
+    {"ts": "1760000600.000300", "thread_ts": "1760000000.000100", "user_name": "priya", "text": "Thanks. And order_total_amount maps to TOT_AMT? Is it net of discounts?"},
+    {"ts": "1760000900.000400", "thread_ts": "1760000000.000100", "user_name": "marco", "text": "Yes, TOT_AMT is already net of discounts and excludes tax, same as order_total_amount."},
+    {"ts": "1761200000.000100", "user_name": "dana", "text": "Heads up on ITEM_MSTR: ITEM_DESC is actually the short product title shown on the site and receipts. product_name should come from ITEM_DESC, not ITEM_LONG_DESC (that one is PDP marketing copy)."},
+    {"ts": "1761300000.000100", "user_name": "li", "text": "STR_DIM.RGN_CD uses the old six-character region codes. REGION in STORE_LOCATIONS maps from RGN_CD through the REF.RGN_XREF lookup."},
+    {"ts": "1761400000.000100", "user_name": "dana", "text": "The source org never had a reviews feed, so customer_reviews starts fresh and has nothing to backfill."},
+    {"ts": "1761500000.000100", "user_name": "marco", "text": "Reminder: source CHNL_CD values are STORE/WEB/APP and sales_channel expects lowercase store/web/app."}
+  ]
+}

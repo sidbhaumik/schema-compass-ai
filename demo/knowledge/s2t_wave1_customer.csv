@@ -1,0 +1,5 @@
+target_table,target_column,source_table,source_column,transformation,notes
+LUMEN_DW.CUSTOMER.CUSTOMER_PROFILE,CUSTOMER_ID,SRC_DW.CRM.CUST_MSTR,CUST_ID,Direct,Surrogate key carried over unchanged
+LUMEN_DW.CUSTOMER.CUSTOMER_PROFILE,SIGNUP_DATE,SRC_DW.CRM.CUST_MSTR,CRT_DT,Direct,Record creation date is the loyalty enrollment date in the source CRM
+LUMEN_DW.CUSTOMER.CUSTOMER_PROFILE,MARKETING_OPT_IN,SRC_DW.CRM.CUST_MSTR,OPT_IN_FLG,"CASE WHEN OPT_IN_FLG = 'Y' THEN TRUE ELSE FALSE END",Null treated as no consent
+lumen.customer.customer_addresses,state_province,SRC_DW.CRM.CUST_ADDR,ST_CD,Direct,

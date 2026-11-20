@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schema Compass</title>
+<style>
+:root{--bg:#f4f6f5;--panel:#fff;--ink:#16211d;--muted:#5a6a64;--line:#d9e1de;--accent:#0f6b55;--accent-ink:#fff;
+--high:#0f6b55;--high-bg:#e2f2ec;--medium:#8a5a00;--medium-bg:#fbf0d9;--low:#9b3d12;--low-bg:#fbe6dc;--none:#5a6a64;--none-bg:#eceff0;
+--bar:#cfdcd7;--warn:#9b3d12;--code:#eef2f0}
+@media (prefers-color-scheme:dark){:root{--bg:#111715;--panel:#18201d;--ink:#e3ece8;--muted:#9aaba4;--line:#2c3934;--accent:#3fb894;--accent-ink:#06120e;
+--high:#5fd0ac;--high-bg:#163a2f;--medium:#e8b75c;--medium-bg:#3a2e14;--low:#f0956b;--low-bg:#3d2016;--none:#9aaba4;--none-bg:#232c29;--bar:#2c3934;--warn:#f0956b;--code:#202a26}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:end;justify-content:space-between;margin-bottom:18px}
+h1{font-size:1.7rem;margin:0;letter-spacing:-.01em}h2{font-size:1.05rem;margin:0 0 10px}h3{margin:0;font-size:1rem}
+.sub{color:var(--muted);margin:2px 0 0}.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.78rem;padding:3px 9px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+.chip b{color:var(--ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+form.search{display:grid;grid-template-columns:2fr 1.4fr auto;gap:10px;align-items:end}
+label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:4px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;font-weight:600;border-radius:8px;padding:9px 14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button:disabled{opacity:.5;cursor:not-allowed}button.small{padding:5px 10px;font-size:.82rem}
+.opts{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:.88rem}.opts label{display:inline-flex;gap:6px;align-items:center;margin:0;font-weight:500;font-size:.88rem}
+.opts input{width:auto}
+.tabs{display:flex;gap:4px;margin:18px 0 12px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--muted);padding:8px 12px}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px}
+.rec{display:flex;gap:16px;align-items:center}.rec>div:last-child{min-width:0;overflow-wrap:anywhere}
+.tabs{overflow-x:auto}.tabs button{white-space:nowrap}main{overflow-x:hidden}
+.gauge{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:1.25rem;flex:none}
+.band{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px}
+.b-high{color:var(--high);background:var(--high-bg)}.b-medium{color:var(--medium);background:var(--medium-bg)}
+.b-low{color:var(--low);background:var(--low-bg)}.b-none{color:var(--none);background:var(--none-bg)}
+.cand{border-top:1px solid var(--line);padding:14px 0}.cand:first-of-type{border-top:0}
+.cand-head{display:flex;gap:10px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+.ref{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92rem;overflow-wrap:anywhere}
+.ref .tbl{color:var(--muted)}.rank{color:var(--muted);font-weight:700;margin-right:6px}
+.bar{height:6px;background:var(--bar);border-radius:6px;overflow:hidden;margin:8px 0}.bar>span{display:block;height:100%;background:var(--accent)}
+.meta{color:var(--muted);font-size:.85rem}
+ul.reasons{margin:6px 0 0;padding-left:18px;font-size:.88rem}ul.reasons li.issue{color:var(--warn)}
+.evid{margin-top:8px;display:grid;gap:6px}
+.ev{font-size:.84rem;border-left:3px solid var(--line);padding:4px 10px;background:var(--code);border-radius:0 6px 6px 0}
+.ev.pos{border-color:var(--high)}.ev.neg{border-color:var(--low)}.ev q{color:var(--muted);display:block;margin-top:2px}
+.ai{margin-top:8px;font-size:.88rem;padding:8px 10px;border-radius:8px;background:var(--code)}
+.actions{display:flex;gap:6px;margin-top:10px}
+.ctx{font-size:.85rem;border-top:1px solid var(--line);padding:10px 0}.ctx:first-of-type{border-top:0;padding-top:0}
+.ctx .t{font-weight:600}.ctx pre{white-space:pre-wrap;font:inherit;margin:4px 0 0;color:var(--muted);max-height:9em;overflow:auto}
+table.grid{width:100%;border-collapse:collapse;font-size:.88rem}
+table.grid th,table.grid td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+table.grid th{color:var(--muted);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em}
+table.grid td.ref{white-space:nowrap}table.grid td.num{text-align:right;font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);text-align:center;padding:40px 10px}
+.error{color:var(--warn);font-weight:600}
+.warnbox{border:1px solid var(--low);background:var(--low-bg);color:var(--ink);border-radius:8px;padding:8px 12px;margin-top:10px;font-size:.88rem}
+.scroll{overflow-x:auto}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);max-width:440px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}form.search{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Schema Compass</h1>
+      <p class="sub">Find the source table and column for each target data product field.</p>
+    </div>
+    <div class="chips" id="status"></div>
+  </header>
+
+  <section class="panel">
+    <form class="search" id="searchForm" autocomplete="off">
+      <div>
+        <label for="table">Target table</label>
+        <input id="table" list="tableList" placeholder="e.g. lumen.sales.orders or Customer Profile" required>
+        <datalist id="tableList"></datalist>
+      </div>
+      <div>
+        <label for="column">Target column <span style="font-weight:400">(optional)</span></label>
+        <input id="column" list="columnList" placeholder="leave blank to match the table">
+        <datalist id="columnList"></datalist>
+      </div>
+      <div class="row">
+        <button class="primary" type="submit">Find matches</button>
+        <button type="button" id="mapBtn" title="Draft a mapping for every column">Map table</button>
+      </div>
+    </form>
+    <div class="opts">
+      <label><input type="checkbox" id="rerank"> AI review with Claude</label>
+      <label>Candidates <select id="k" style="width:auto;padding:4px 8px"><option>3</option><option selected>5</option><option>10</option></select></label>
+      <span id="aiNote"></span>
+    </div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="results">Results</button>
+    <button role="tab" aria-selected="false" data-tab="mapping">Table mapping</button>
+    <button role="tab" aria-selected="false" data-tab="knowledge">Knowledge</button>
+    <button role="tab" aria-selected="false" data-tab="reviews">Review log</button>
+  </nav>
+
+  <section data-panel="results">
+    <div class="layout">
+      <div>
+        <div class="panel" id="recPanel"><div class="empty">Search for a target table, or a table and column, to see ranked source candidates.</div></div>
+        <div class="panel" id="candPanel" hidden></div>
+      </div>
+      <aside class="panel" id="ctxPanel"><h2>Related knowledge</h2><div class="meta">Passages from S2T sheets, Slack and notes appear here.</div></aside>
+    </div>
+  </section>
+
+  <section data-panel="mapping" hidden>
+    <div class="panel">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
+        <h2 id="mapTitle" style="margin:0">Table mapping</h2>
+        <a id="csvLink" hidden><button class="small" type="button">Download S2T CSV</button></a>
+      </div>
+      <div class="scroll" id="mapBody"><div class="empty">Choose a target table and select <b>Map table</b> to draft a source-to-target sheet.</div></div>
+    </div>
+  </section>
+
+  <section data-panel="knowledge" hidden>
+    <div class="panel">
+      <h2>Knowledge base</h2>
+      <p class="meta">Upload S2T sheets (.csv, .xlsx), Slack channel exports (.json) or notes (.md, .txt). They are used as evidence immediately.</p>
+      <div class="row"><input type="file" id="upload" accept=".csv,.xlsx,.json,.md,.txt" style="max-width:360px"><button class="small" id="uploadBtn" type="button">Upload</button><span id="uploadMsg" class="meta"></span></div>
+      <div class="row" style="margin-top:12px"><input id="kq" placeholder="Search knowledge, e.g. product name"><button class="small" id="kqBtn" type="button">Search</button></div>
+      <div id="kList" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <section data-panel="reviews" hidden>
+    <div class="panel"><h2>Review log</h2><div class="scroll" id="reviewBody"></div></div>
+  </section>
+</main>
+
+<dialog id="reviewDialog">
+  <form method="dialog" id="reviewForm">
+    <h2 id="reviewTitle">Record decision</h2>
+    <p class="meta ref" id="reviewPair"></p>
+    <label for="reviewer">Reviewer</label><input id="reviewer" required>
+    <label for="note" style="margin-top:8px">Note</label><textarea id="note" rows="3" placeholder="Why this is or is not the right source"></textarea>
+    <div class="actions" style="justify-content:flex-end"><button value="cancel" formnovalidate>Cancel</button><button class="primary" value="ok" id="reviewSubmit">Save</button></div>
+  </form>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "—").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
+let current = null, status = null;
+
+async function api(path, options = {}) {
+  const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...options });
+  if (!res.ok) { let msg = res.statusText; try { msg = (await res.json()).detail || msg; } catch {} throw new Error(msg); }
+  return res.json();
+}
+
+async function loadStatus() {
+  status = await api("/api/status");
+  const k = status.knowledge;
+  $("#status").innerHTML = [
+    `Source <b>${status.source.tables}</b> tables · <b>${status.source.columns}</b> cols`,
+    `Target <b>${status.target.tables}</b> tables · <b>${status.target.columns}</b> cols`,
+    `Knowledge <b>${status.s2t_rows}</b> S2T rows · <b>${k.slack || 0}</b> threads · <b>${k.doc || 0}</b> notes`,
+    `Reviews <b>${status.reviews}</b>`,
+    status.embeddings ? `Embeddings <b>on</b>` : `Embeddings <b>off</b>`,
+    status.llm ? `AI review <b>${esc(status.llm)}</b>` : `AI review <b>off</b>`,
+  ].map(t => `<span class="chip">${t}</span>`).join("");
+  $("#rerank").disabled = !status.llm;
+  $("#aiNote").textContent = status.llm ? "" : "AI review needs ANTHROPIC_API_KEY or `ant auth login`.";
+  const tables = await api("/api/tables?limit=500");
+  $("#tableList").innerHTML = tables.map(t => `<option value="${esc(t.name)}">${esc(t.logical_name || "")} · ${t.platform}</option>`).join("");
+}
+
+$("#table").addEventListener("change", async () => {
+  $("#columnList").innerHTML = "";
+  try {
+    const t = await api(`/api/table?name=${encodeURIComponent($("#table").value)}`);
+    $("#columnList").innerHTML = t.columns.map(c => `<option value="${esc(c.name)}">${esc(c.logical_name || "")} · ${esc(c.data_type)}</option>`).join("");
+  } catch {}
+});
+
+function gauge(score, band) {
+  const color = `var(--${band})`, bg = `var(--${band}-bg)`;
+  return `<div class="gauge" style="background:conic-gradient(${color} ${score * 3.6}deg, ${bg} 0)"><div class="gauge" style="width:58px;height:58px;background:var(--panel);font-size:1.1rem">${Math.round(score)}</div></div>`;
+}
+function refOf(c) {
+  return `<span class="tbl">${esc(c.source_table.name)}</span>${c.source_column ? "." + `<b>${esc(c.source_column.name)}</b>` : ""}`;
+}
+function evidenceHtml(list) {
+  if (!list.length) return "";
+  return `<div class="evid">${list.map(e => `<div class="ev ${e.strength > 0 ? "pos" : "neg"}"><b>${esc(e.kind.toUpperCase())}</b> · ${esc(e.summary)} <span class="meta">(${esc(e.source)})</span>${e.snippet ? `<q>${esc(e.snippet)}</q>` : ""}</div>`).join("")}</div>`;
+}
+
+function renderResult(r) {
+  current = r;
+  const rec = r.recommendation, t = r.target;
+  const name = t.table.name + (t.column ? "." + t.column.name : "");
+  const detail = t.column ? `${esc(t.column.logical_name)} · ${esc(t.column.data_type)} — ${esc(t.column.description)}` : `${esc(t.table.logical_name)} · ${esc(t.table.platform)} — ${esc(t.table.description)}`;
+  const warn = (r.warnings || []).map(w => `<div class="warnbox"><b>Knowledge warning:</b> ${esc(w.summary)}<br><span class="meta">${esc(w.snippet)}</span></div>`).join("");
+  $("#recPanel").innerHTML = `<div class="rec">${gauge(rec.confidence, rec.band)}<div>
+      <div class="ref">${esc(name)}</div><div class="meta">${detail}</div>
+      <div style="margin-top:6px"><span class="band b-${rec.band}">${rec.band}</span> ${esc(rec.text)} <span class="meta">· lead ${rec.margin.toFixed(1)} pts</span></div>
+      ${rec.summary ? `<div class="ai"><b>AI review:</b> ${esc(rec.summary)}${rec.transformation ? `<br><b>Load rule:</b> <code>${esc(rec.transformation)}</code>` : ""}</div>` : ""}
+    </div></div>${warn}`;
+  const cands = r.candidates.map(c => `
+    <div class="cand">
+      <div class="cand-head"><div class="ref"><span class="rank">#${c.rank}</span>${refOf(c)}</div>
+        <div><span class="band b-${c.band}">${c.band}</span> <b>${c.score.toFixed(1)}</b>${c.heuristic_score != null ? ` <span class="meta">(heuristic ${c.heuristic_score.toFixed(1)})</span>` : ""}</div></div>
+      <div class="bar"><span style="width:${Math.min(100, c.score)}%"></span></div>
+      <div class="meta">${c.source_column ? `${esc(c.source_column.logical_name)} · ${esc(c.source_column.data_type)} — ${esc(c.source_column.description)}` : `${esc(c.source_table.logical_name)} — ${esc(c.source_table.description)}`}</div>
+      <ul class="reasons">${c.reasons.filter(x => !c.evidence.some(e => e.summary === x)).map(x =>`<li>${esc(x)}</li>`).join("")}${c.issues.map(x => `<li class="issue">${esc(x)}</li>`).join("")}</ul>
+      ${c.llm ? `<div class="ai"><b>AI verdict:</b> ${esc(c.llm.verdict.replace("_", " "))} (${c.llm.confidence}) — ${esc(c.llm.rationale)}</div>` : ""}
+      ${evidenceHtml(c.evidence.filter(e => !(r.warnings || []).some(w => w.snippet === e.snippet)))}
+      <div class="actions"><button class="small" data-act="approved" data-rank="${c.rank}">Approve</button><button class="small" data-act="rejected" data-rank="${c.rank}">Reject</button></div>
+    </div>`).join("");
+  $("#candPanel").hidden = false;
+  $("#candPanel").innerHTML = `<h2>Candidates</h2>${cands || '<div class="empty">No candidates.</div>'}`;
+  $("#ctxPanel").innerHTML = `<h2>Related knowledge</h2>` + (r.context.length ? r.context.map(c => `<div class="ctx"><div class="t">${esc(c.title)}</div><div class="meta">${esc(c.kind)} · relevance ${(c.score * 100).toFixed(0)}%</div><pre>${esc(c.text)}</pre></div>`).join("") : `<div class="meta">No related passages found.</div>`);
+}
+
+function showTab(name) {
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
+  document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== name);
+  if (name === "reviews") loadReviews();
+  if (name === "knowledge" && !$("#kList").innerHTML) searchKnowledge();
+}
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+function busy(el, msg) { el.innerHTML = `<div class="empty">${msg}</div>`; }
+
+$("#searchForm").addEventListener("submit", async e => {
+  e.preventDefault(); showTab("results");
+  busy($("#recPanel"), $("#rerank").checked ? "Matching and asking Claude to review…" : "Matching…"); $("#candPanel").hidden = true;
+  try {
+    renderResult(await api("/api/match", { method: "POST", body: JSON.stringify({ table: $("#table").value, column: $("#column").value || null, k: +$("#k").value, rerank: $("#rerank").checked }) }));
+  } catch (err) { $("#recPanel").innerHTML = `<div class="error">${esc(err.message)}</div>`; }
+});
+
+$("#mapBtn").addEventListener("click", async () => {
+  if (!$("#table").value) { $("#table").focus(); return; }
+  showTab("mapping"); busy($("#mapBody"), "Mapping every column…");
+  try {
+    const r = await api("/api/map-table", { method: "POST", body: JSON.stringify({ table: $("#table").value, k: 3 }) });
+    const top = r.table.candidates[0];
+    $("#mapTitle").innerHTML = `${esc(r.target.name)} <span class="meta">← ${top ? esc(top.source_table.name) : "no table match"} (${r.table.recommendation.confidence.toFixed(0)})</span>`;
+    $("#csvLink").href = `/api/map-table.csv?table=${encodeURIComponent(r.target.id)}`; $("#csvLink").hidden = false;
+    $("#mapBody").innerHTML = `<table class="grid"><thead><tr><th>Target column</th><th>Suggested source</th><th>Score</th><th>Band</th><th>Notes</th><th></th></tr></thead><tbody>${
+      r.columns.map((c, i) => { const s = c.candidates[0]; return `<tr>
+        <td class="ref">${esc(c.target.column.name)}<div class="meta">${esc(c.target.column.data_type)}</div></td>
+        <td class="ref">${s ? refOf(s) : "—"}${c.candidates[1] ? `<div class="meta">alt: ${esc(c.candidates[1].source_column.name)} (${c.candidates[1].score.toFixed(0)})</div>` : ""}</td>
+        <td class="num">${c.recommendation.confidence.toFixed(1)}</td>
+        <td><span class="band b-${c.recommendation.band}">${c.recommendation.band}</span></td>
+        <td class="meta">${esc([...(c.warnings || []).map(w => w.summary), ...(s ? s.issues : []), ...(s ? s.evidence.filter(e => e.strength > 0).map(e => e.summary) : [])].join(" · ") || "")}</td>
+        <td><button class="small" data-open="${esc(c.target.column.name)}">Details</button></td></tr>`; }).join("")}</tbody></table>`;
+  } catch (err) { $("#mapBody").innerHTML = `<div class="error">${esc(err.message)}</div>`; }
+});
+$("#mapBody").addEventListener("click", e => {
+  const col = e.target.dataset.open; if (!col) return;
+  $("#column").value = col; $("#searchForm").requestSubmit();
+});
+
+let pending = null;
+$("#candPanel").addEventListener("click", e => {
+  const act = e.target.dataset.act; if (!act || !current) return;
+  const c = current.candidates.find(x => x.rank === +e.target.dataset.rank);
+  pending = { decision: act, cand: c };
+  $("#reviewTitle").textContent = act === "approved" ? "Approve mapping" : "Reject mapping";
+  $("#reviewPair").textContent = `${current.target.table.name}${current.target.column ? "." + current.target.column.name : ""} ← ${c.source_table.name}${c.source_column ? "." + c.source_column.name : ""}`;
+  $("#reviewer").value = store.get("reviewer") || ""; $("#note").value = "";
+  $("#reviewDialog").showModal();
+});
+$("#reviewDialog").addEventListener("close", async () => {
+  if ($("#reviewDialog").returnValue !== "ok" || !pending) return;
+  store.set("reviewer", $("#reviewer").value);
+  const t = current.target, c = pending.cand;
+  try {
+    await api("/api/feedback", { method: "POST", body: JSON.stringify({ target_table: t.table.id, target_column: t.column ? t.column.name : null,
+      source_table: c.source_table.id, source_column: c.source_column ? c.source_column.name : null,
+      decision: pending.decision, reviewer: $("#reviewer").value, note: $("#note").value, confidence: c.score }) });
+    loadStatus(); $("#searchForm").requestSubmit();
+  } catch (err) { alert(err.message); }
+});
+
+async function loadReviews() {
+  const rows = await api("/api/feedback");
+  $("#reviewBody").innerHTML = rows.length ? `<table class="grid"><thead><tr><th>When</th><th>Target</th><th>Source</th><th>Decision</th><th>Reviewer</th><th>Note</th></tr></thead><tbody>${
+    rows.map(r => `<tr><td class="meta">${esc(r.created_at.slice(0, 16).replace("T", " "))}</td><td class="ref">${esc(r.target_table)}${r.target_column ? "." + esc(r.target_column) : ""}</td>
+      <td class="ref">${esc(r.source_table)}${r.source_column ? "." + esc(r.source_column) : ""}</td>
+      <td><span class="band ${r.decision === "approved" ? "b-high" : r.decision === "rejected" ? "b-low" : "b-none"}">${esc(r.decision)}</span></td>
+      <td>${esc(r.reviewer)}</td><td class="meta">${esc(r.note)}</td></tr>`).join("")}</tbody></table>` : `<div class="empty">No decisions yet. Approve or reject candidates to build an audit trail; approvals boost future matches.</div>`;
+}
+
+async function searchKnowledge() {
+  const q = $("#kq").value;
+  const rows = await api(`/api/knowledge?q=${encodeURIComponent(q)}`);
+  $("#kList").innerHTML = rows.length ? rows.map(c => `<div class="ctx"><div class="t">${esc(c.title)}</div><div class="meta">${esc(c.kind)} · ${esc(c.source)}${c.score != null ? ` · relevance ${(c.score * 100).toFixed(0)}%` : ""}</div><pre>${esc(c.text)}</pre></div>`).join("") : `<div class="empty">No passages.</div>`;
+}
+$("#kqBtn").addEventListener("click", searchKnowledge);
+$("#kq").addEventListener("keydown", e => { if (e.key === "Enter") searchKnowledge(); });
+$("#uploadBtn").addEventListener("click", async () => {
+  const f = $("#upload").files[0]; if (!f) return;
+  const body = new FormData(); body.append("file", f);
+  const res = await fetch("/api/knowledge/upload", { method: "POST", body });
+  const data = await res.json();
+  $("#uploadMsg").textContent = res.ok ? `Added ${data.chunks} passages from ${data.file}.` : data.detail;
+  loadStatus(); searchKnowledge();
+});
+
+loadStatus().catch(err => { $("#status").innerHTML = `<span class="error">${esc(err.message)}</span>`; });
+</script>
+</body>
+</html>
