@@ -5,11 +5,11 @@ description = "Semantic source-to-target matching for data migrations across Sno
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
 dependencies = ["numpy>=1.26,<3", "scikit-learn>=1.5,<2", "fastapi>=0.110,<1", "uvicorn>=0.29,<1",
-                "python-multipart>=0.0.9", "anthropic>=2.11,<3"]
+                "python-multipart>=0.0.9", "anthropic>=2.11,<3", "openpyxl>=3.1"]
 
 [project.optional-dependencies]
 semantic = ["sentence-transformers>=3,<6"]
-connectors = ["snowflake-connector-python>=3,<5", "databricks-sdk>=0.30", "openpyxl>=3.1"]
+connectors = ["snowflake-connector-python>=3,<5", "databricks-sdk>=0.30"]
 dev = ["httpx>=0.27"]
 
 [project.scripts]

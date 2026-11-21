@@ -94,6 +94,15 @@ class EngineTests(unittest.TestCase):
         result = self.match("customer_reviews")
         self.assertEqual(result["recommendation"]["band"], "none")
         self.assertTrue(result["warnings"])
+        self.assertEqual(result["advice"]["decision"], "no_source")
+
+    def test_advice_is_actionable(self):
+        advice = self.match("CUSTOMER_PROFILE", "MARKETING_OPT_IN")["advice"]
+        self.assertTrue(advice["headline"].startswith("Use SRC_DW.CRM.CUST_MSTR.OPT_IN_FLG"))
+        self.assertTrue(any("convert" in c for c in advice["checks"]))
+        self.assertTrue(any("source-to-target sheet" in w for w in advice["why"]))
+        steps = [s["step"] for s in self.match("orders", "order_status")["trace"]]
+        self.assertEqual(steps[0], "Read the target definition")
 
     def test_issues_flag_width_and_type(self):
         top = self.match("CUSTOMER_PROFILE", "FIRST_NAME")["candidates"][0]

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from .advisor import advise
 from .catalog import Catalog, Column, Table
 from .feedback import FeedbackStore
 from .index import Embedder, SimilarityModel, readable_text
@@ -169,7 +170,8 @@ class MatchEngine:
                               column_coverage=None if row["coverage"] is None else round(row["coverage"], 3)),
                 evidence=[e.to_dict() for e in row["evidence"]], issues=[], reasons=reasons))
         warnings = self._warn(target_table, None, candidates)
-        return self._finish(target_table, None, candidates, rerank, warnings)
+        return self._finish(target_table, None, candidates, rerank, warnings,
+                            considered=min(len(scored), 15))
 
     # ----------------------------------------------------------- column match
     def match_column(self, target_table: Table, target_column: Column, k: int = 5,
@@ -236,7 +238,7 @@ class MatchEngine:
                 evidence=[e.to_dict() for e in row["evidence"]], issues=row["issues"],
                 reasons=self._column_reasons(row)))
         warnings = self._warn(target_table, target_column, candidates)
-        return self._finish(target_table, target_column, candidates, rerank, warnings)
+        return self._finish(target_table, target_column, candidates, rerank, warnings, considered=len(pool))
 
     def map_table(self, target_table: Table, k: int = 3, rerank: bool = False) -> dict:
         """Map every column of a target table (a draft S2T sheet)."""
@@ -246,7 +248,7 @@ class MatchEngine:
 
     # ------------------------------------------------------------- reporting
     def _finish(self, target_table: Table, target_column: Column | None, candidates: list[dict],
-                rerank: bool, warnings: list[dict] | None = None) -> dict:
+                rerank: bool, warnings: list[dict] | None = None, considered: int = 0) -> dict:
         target_item = target_column or target_table
         query = readable_text(target_item) + (f" in {readable_text(target_table)}" if target_column else "")
         context = [dict(chunk.to_dict(), score=round(score, 3))
@@ -273,13 +275,56 @@ class MatchEngine:
             cand["band"] = band(cand["score"])[0]
         if llm and llm.get("no_match") and level in {"high", "medium"}:
             level, text = "low", "LLM reviewer doubts every candidate: research before using"
-        return dict(
+        trace = self._trace(target_table, target_column, considered, candidates, context, warnings or [],
+                            rerank, llm)
+        result = dict(
             level="column" if target_column else "table",
             target=dict(table=target_table.to_dict(), column=target_column.to_dict() if target_column else None),
             recommendation=dict(band=level, text=text, confidence=round(top, 1), margin=round(margin, 1),
                                 summary=(llm or {}).get("summary"),
                                 transformation=(llm or {}).get("transformation")),
-            candidates=candidates, context=context, warnings=warnings or [], reranked=llm is not None)
+            candidates=candidates, context=context, warnings=warnings or [], reranked=llm is not None,
+            trace=trace)
+        result["advice"] = advise(result)
+        return result
+
+    def _trace(self, target_table: Table, target_column: Column | None, considered: int,
+               candidates: list[dict], context: list[dict], warnings: list[dict], rerank: bool,
+               llm: dict | None) -> list[dict]:
+        """A plain account of what the engine did, shown to users as "How we found this"."""
+        item = target_column or target_table
+        used = [label for label, value in (("business name", item.logical_name),
+                                           ("description", item.description),
+                                           ("data type", getattr(item, "data_type", None)),
+                                           ("length", getattr(item, "length", None))) if value]
+        kinds: dict[str, int] = {}
+        for chunk in self.knowledge.chunks:
+            kinds[chunk.kind] = kinds.get(chunk.kind, 0) + 1
+        evidence = sum(len(c["evidence"]) for c in candidates)
+        steps = [
+            dict(step="Read the target definition",
+                 detail=f"Used the physical name{', ' + ', '.join(used) if used else ''} of {item.name}."
+                        + ("" if used else " No description was available, so the match relies on the name.")),
+            dict(step="Searched the source metadata",
+                 detail=f"Compared against {len(self.source)} tables and {len(self.source.columns)} columns using "
+                        f"keyword and meaning-based similarity"
+                        + (" plus embeddings." if self.model.embedder else ".")),
+            dict(step="Shortlisted candidates",
+                 detail=f"Scored {considered} {'columns' if target_column else 'tables'} in detail, checking "
+                        + ("data type, length, field role and parent table." if target_column
+                           else "how many target columns each table can supply.")),
+            dict(step="Checked team knowledge",
+                 detail=(f"Searched {kinds.get('s2t', 0)} S2T mapping rows, {kinds.get('slack', 0)} Slack threads and "
+                         f"{kinds.get('doc', 0)} document sections; found {evidence} piece(s) of evidence"
+                         + (f" and {len(warnings)} warning(s)." if warnings else ".")) if self.knowledge.chunks
+                 else "No S2T sheets, Slack exports or documents have been added to this project yet."),
+        ]
+        if llm is not None:
+            steps.append(dict(step="AI review", detail=f"{llm.get('model', 'Claude')} reviewed the top "
+                                                       f"{len(llm.get('candidates', []))} candidates and the evidence."))
+        elif rerank:
+            steps.append(dict(step="AI review", detail="Requested but unavailable; showing the standard ranking."))
+        return steps
 
     @staticmethod
     def _pct(value: float) -> str:

@@ -4,318 +4,497 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Schema Compass</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230f6b55'/%3E%3Cpath d='M16 6l4 10-4 10-4-10z' fill='%23fff'/%3E%3C/svg%3E">
 <style>
-:root{--bg:#f4f6f5;--panel:#fff;--ink:#16211d;--muted:#5a6a64;--line:#d9e1de;--accent:#0f6b55;--accent-ink:#fff;
---high:#0f6b55;--high-bg:#e2f2ec;--medium:#8a5a00;--medium-bg:#fbf0d9;--low:#9b3d12;--low-bg:#fbe6dc;--none:#5a6a64;--none-bg:#eceff0;
---bar:#cfdcd7;--warn:#9b3d12;--code:#eef2f0}
-@media (prefers-color-scheme:dark){:root{--bg:#111715;--panel:#18201d;--ink:#e3ece8;--muted:#9aaba4;--line:#2c3934;--accent:#3fb894;--accent-ink:#06120e;
---high:#5fd0ac;--high-bg:#163a2f;--medium:#e8b75c;--medium-bg:#3a2e14;--low:#f0956b;--low-bg:#3d2016;--none:#9aaba4;--none-bg:#232c29;--bar:#2c3934;--warn:#f0956b;--code:#202a26}}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
-main{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
-header{display:flex;flex-wrap:wrap;gap:12px;align-items:end;justify-content:space-between;margin-bottom:18px}
-h1{font-size:1.7rem;margin:0;letter-spacing:-.01em}h2{font-size:1.05rem;margin:0 0 10px}h3{margin:0;font-size:1rem}
-.sub{color:var(--muted);margin:2px 0 0}.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{font-size:.78rem;padding:3px 9px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
-.chip b{color:var(--ink)}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
-form.search{display:grid;grid-template-columns:2fr 1.4fr auto;gap:10px;align-items:end}
-label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:4px}
-input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
-input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-button{font:inherit;font-weight:600;border-radius:8px;padding:9px 14px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
-button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-button:disabled{opacity:.5;cursor:not-allowed}button.small{padding:5px 10px;font-size:.82rem}
-.opts{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:.88rem}.opts label{display:inline-flex;gap:6px;align-items:center;margin:0;font-weight:500;font-size:.88rem}
-.opts input{width:auto}
-.tabs{display:flex;gap:4px;margin:18px 0 12px;border-bottom:1px solid var(--line)}
-.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--muted);padding:8px 12px}
-.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
-.layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px}
-.rec{display:flex;gap:16px;align-items:center}.rec>div:last-child{min-width:0;overflow-wrap:anywhere}
-.tabs{overflow-x:auto}.tabs button{white-space:nowrap}main{overflow-x:hidden}
-.gauge{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:1.25rem;flex:none}
-.band{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px}
-.b-high{color:var(--high);background:var(--high-bg)}.b-medium{color:var(--medium);background:var(--medium-bg)}
-.b-low{color:var(--low);background:var(--low-bg)}.b-none{color:var(--none);background:var(--none-bg)}
-.cand{border-top:1px solid var(--line);padding:14px 0}.cand:first-of-type{border-top:0}
-.cand-head{display:flex;gap:10px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
-.ref{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92rem;overflow-wrap:anywhere}
-.ref .tbl{color:var(--muted)}.rank{color:var(--muted);font-weight:700;margin-right:6px}
-.bar{height:6px;background:var(--bar);border-radius:6px;overflow:hidden;margin:8px 0}.bar>span{display:block;height:100%;background:var(--accent)}
-.meta{color:var(--muted);font-size:.85rem}
-ul.reasons{margin:6px 0 0;padding-left:18px;font-size:.88rem}ul.reasons li.issue{color:var(--warn)}
-.evid{margin-top:8px;display:grid;gap:6px}
-.ev{font-size:.84rem;border-left:3px solid var(--line);padding:4px 10px;background:var(--code);border-radius:0 6px 6px 0}
-.ev.pos{border-color:var(--high)}.ev.neg{border-color:var(--low)}.ev q{color:var(--muted);display:block;margin-top:2px}
-.ai{margin-top:8px;font-size:.88rem;padding:8px 10px;border-radius:8px;background:var(--code)}
-.actions{display:flex;gap:6px;margin-top:10px}
-.ctx{font-size:.85rem;border-top:1px solid var(--line);padding:10px 0}.ctx:first-of-type{border-top:0;padding-top:0}
-.ctx .t{font-weight:600}.ctx pre{white-space:pre-wrap;font:inherit;margin:4px 0 0;color:var(--muted);max-height:9em;overflow:auto}
+:root{--bg:#f3f5f4;--panel:#fff;--ink:#14201b;--muted:#5b6b65;--line:#dbe3e0;--soft:#eef2f0;--accent:#0f6b55;--accent-ink:#fff;--accent-soft:#e1f1eb;
+--use:#0f6b55;--use-bg:#e1f1eb;--review:#8a5a00;--review-bg:#fbf0d9;--research:#a1440f;--research-bg:#fbe6dc;--no_source:#5b6b65;--no_source-bg:#eceff0;
+--high:#0f6b55;--high-bg:#e1f1eb;--medium:#8a5a00;--medium-bg:#fbf0d9;--low:#a1440f;--low-bg:#fbe6dc;--none:#5b6b65;--none-bg:#eceff0;--warn:#a1440f;--shadow:0 1px 2px rgba(20,32,27,.06),0 4px 16px rgba(20,32,27,.05)}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1513;--panel:#161e1b;--ink:#e2ebe7;--muted:#98a9a2;--line:#2a3632;--soft:#1d2723;--accent:#40b893;--accent-ink:#04110c;--accent-soft:#163a2f;
+--use:#5fd0ac;--use-bg:#163a2f;--review:#e8b75c;--review-bg:#3a2e14;--research:#f0956b;--research-bg:#3d2016;--no_source:#98a9a2;--no_source-bg:#232c29;
+--high:#5fd0ac;--high-bg:#163a2f;--medium:#e8b75c;--medium-bg:#3a2e14;--low:#f0956b;--low-bg:#3d2016;--none:#98a9a2;--none-bg:#232c29;--warn:#f0956b;--shadow:none}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--accent)}code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;overflow-wrap:anywhere}
+.topbar{background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.topbar-in{max-width:1200px;margin:0 auto;padding:10px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.brand{display:flex;gap:8px;align-items:center;font-weight:750;font-size:1.05rem;margin-right:auto}
+.brand svg{width:26px;height:26px}
+nav.views{display:flex;gap:2px;flex-wrap:wrap}
+nav.views a{padding:7px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:600;font-size:.92rem}
+nav.views a[aria-current=page]{background:var(--accent-soft);color:var(--accent)}
+.proj{display:flex;gap:6px;align-items:center}.proj select{max-width:220px}
+main{max-width:1200px;margin:0 auto;padding:24px 20px 80px}
+h1{font-size:1.6rem;margin:0 0 4px;letter-spacing:-.01em}h2{font-size:1.08rem;margin:0 0 10px}h3{font-size:.98rem;margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:14px;box-shadow:var(--shadow)}
+label{display:block;font-size:.8rem;font-weight:650;color:var(--muted);margin-bottom:5px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button,.btn{font:inherit;font-weight:650;border-radius:9px;padding:10px 16px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+button.primary,.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.ghost{border-color:transparent;background:none;color:var(--muted)}
+button:disabled{opacity:.5;cursor:not-allowed}button.sm,.btn.sm{padding:6px 11px;font-size:.85rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.spacer{flex:1}
+.muted{color:var(--muted)}.small{font-size:.86rem}.err{color:var(--warn);font-weight:600}
+.search{display:grid;grid-template-columns:1.3fr 1fr auto;gap:12px;align-items:end}
+.ta{position:relative}
+.ta ul{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.14);max-height:320px;overflow:auto}
+.ta li{padding:8px 10px;border-radius:7px;cursor:pointer;display:flex;gap:8px;justify-content:space-between}
+.ta li[aria-selected=true],.ta li:hover{background:var(--soft)}
+.ta li .v{font-family:ui-monospace,Menlo,monospace;font-size:.88rem;overflow-wrap:anywhere}.ta li .d{color:var(--muted);font-size:.82rem;text-align:right}
+.toggle{display:inline-flex;gap:8px;align-items:center;font-weight:500;font-size:.9rem;color:var(--ink);margin:0}.toggle input{width:auto}
+.examples{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.chip{font-size:.8rem;padding:4px 10px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--ink);cursor:pointer;font-weight:500}
+.pill{display:inline-block;font-size:.74rem;font-weight:700;letter-spacing:.03em;padding:3px 9px;border-radius:999px;text-transform:uppercase}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}
+.decision{border-left:5px solid var(--dc);padding-left:18px}
+.decision .label{color:var(--dc);font-weight:750;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em}
+.decision .headline{font-size:1.2rem;font-weight:700;margin:4px 0 2px;overflow-wrap:anywhere}
+.target-line{color:var(--muted);font-size:.88rem;overflow-wrap:anywhere}
+.meter{display:flex;gap:12px;align-items:center;margin:12px 0}
+.meter .track{flex:1;height:10px;border-radius:10px;background:var(--soft);overflow:hidden;max-width:360px}
+.meter .fill{height:100%;background:var(--dc);border-radius:10px}
+.meter b{font-size:1.4rem;font-variant-numeric:tabular-nums}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:6px}
+ul.list{margin:0;padding-left:18px}ul.list li{margin:3px 0}
+ul.checks li::marker{color:var(--warn)}
+.ai{background:var(--soft);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:.92rem}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+details.trace summary,details.more summary{cursor:pointer;font-weight:650;color:var(--muted);font-size:.9rem}
+ol.steps{margin:10px 0 0;padding-left:20px}ol.steps li{margin:6px 0}ol.steps b{display:block}
+.cand{border-top:1px solid var(--line);padding:14px 0}.cand:first-child{border-top:0;padding-top:4px}
+.cand-h{display:flex;gap:10px;justify-content:space-between;align-items:baseline;flex-wrap:wrap}
+.bar{height:6px;background:var(--soft);border-radius:6px;overflow:hidden;margin:8px 0;max-width:420px}.bar>span{display:block;height:100%;background:var(--accent)}
+.ev{font-size:.85rem;border-left:3px solid var(--line);padding:5px 10px;background:var(--soft);border-radius:0 7px 7px 0;margin-top:6px}
+.ev.pos{border-color:var(--use)}.ev.neg{border-color:var(--research)}.ev q{display:block;color:var(--muted);margin-top:2px}
+.ctx{overflow-wrap:anywhere;font-size:.86rem;border-top:1px solid var(--line);padding:10px 0}.ctx:first-of-type{border-top:0;padding-top:0}
+.ctx pre{white-space:pre-wrap;font:inherit;margin:4px 0 0;color:var(--muted);max-height:10em;overflow:auto}
+.warnbox{border:1px solid var(--research);background:var(--research-bg);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:.9rem}
 table.grid{width:100%;border-collapse:collapse;font-size:.88rem}
-table.grid th,table.grid td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
-table.grid th{color:var(--muted);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em}
-table.grid td.ref{white-space:nowrap}table.grid td.num{text-align:right;font-variant-numeric:tabular-nums}
-.empty{color:var(--muted);text-align:center;padding:40px 10px}
-.error{color:var(--warn);font-weight:600}
-.warnbox{border:1px solid var(--low);background:var(--low-bg);color:var(--ink);border-radius:8px;padding:8px 12px;margin-top:10px;font-size:.88rem}
+table.grid th,table.grid td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+table.grid th{color:var(--muted);font-weight:650;font-size:.76rem;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+table.grid td.mono{white-space:nowrap}table.grid td.num{text-align:right;font-variant-numeric:tabular-nums}
 .scroll{overflow-x:auto}
-dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);max-width:440px;width:calc(100% - 32px)}
-dialog::backdrop{background:rgba(0,0,0,.35)}
-@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}form.search{grid-template-columns:1fr}}
+.empty{color:var(--muted);text-align:center;padding:34px 10px}
+.steps-setup{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.step-n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:750;font-size:.85rem;margin-right:6px}
+.step-n.done{background:var(--accent);color:var(--accent-ink)}
+.drop{border:1.5px dashed var(--line);border-radius:12px;padding:16px;text-align:center;color:var(--muted);font-size:.9rem;margin:10px 0}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.stat{display:flex;gap:18px;flex-wrap:wrap;font-size:.88rem;color:var(--muted)}.stat b{color:var(--ink);font-size:1.05rem}
+.tips{margin:8px 0 0;padding-left:18px;color:var(--warn);font-size:.86rem}
+.kpis{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.kpi{border-radius:10px;padding:8px 14px;background:var(--soft);font-size:.86rem}.kpi b{display:block;font-size:1.25rem}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);max-width:460px;width:calc(100% - 32px);padding:20px}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.9rem;z-index:50}
+.hide{display:none!important}
+@media (max-width:960px){.layout{grid-template-columns:minmax(0,1fr)}.steps-setup{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:700px){.search{grid-template-columns:minmax(0,1fr)}.cols2{grid-template-columns:minmax(0,1fr)}main{padding:16px 16px 60px}.topbar-in{padding:10px 16px}.proj select{max-width:150px}}
 </style>
 </head>
 <body>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="var(--accent)"/><path d="M16 6l4 10-4 10-4-10z" fill="var(--accent-ink)"/></svg>Schema Compass</div>
+    <nav class="views" aria-label="Sections">
+      <a href="#find">Find a source</a><a href="#bulk">Bulk mapping</a><a href="#reviews">Decisions</a><a href="#setup">Project setup</a>
+    </nav>
+    <div class="proj"><label for="projectSel" class="hide">Project</label><select id="projectSel" aria-label="Project"></select>
+      <button class="sm" id="newProjectBtn" title="Create a project">New</button></div>
+  </div>
+</header>
+
 <main>
-  <header>
-    <div>
-      <h1>Schema Compass</h1>
-      <p class="sub">Find the source table and column for each target data product field.</p>
-    </div>
-    <div class="chips" id="status"></div>
-  </header>
-
-  <section class="panel">
-    <form class="search" id="searchForm" autocomplete="off">
-      <div>
-        <label for="table">Target table</label>
-        <input id="table" list="tableList" placeholder="e.g. lumen.sales.orders or Customer Profile" required>
-        <datalist id="tableList"></datalist>
-      </div>
-      <div>
-        <label for="column">Target column <span style="font-weight:400">(optional)</span></label>
-        <input id="column" list="columnList" placeholder="leave blank to match the table">
-        <datalist id="columnList"></datalist>
-      </div>
-      <div class="row">
-        <button class="primary" type="submit">Find matches</button>
-        <button type="button" id="mapBtn" title="Draft a mapping for every column">Map table</button>
-      </div>
+<!-- FIND -->
+<section data-view="find">
+  <h1>Find the source for a target field</h1>
+  <p class="lead">Pick the target table and, optionally, a column. Schema Compass reads the target's definition, searches the source metadata and your team's documents, and recommends the best match.</p>
+  <div class="card">
+    <form class="search" id="findForm" autocomplete="off">
+      <div class="ta"><label for="tTable">Target table</label><input id="tTable" placeholder="Start typing a table or business name" role="combobox" aria-expanded="false" aria-autocomplete="list" required></div>
+      <div class="ta"><label for="tColumn">Target column <span style="font-weight:400">(optional)</span></label><input id="tColumn" placeholder="Leave blank to match the whole table" role="combobox" aria-expanded="false" aria-autocomplete="list"></div>
+      <button class="primary" type="submit">Find source</button>
     </form>
-    <div class="opts">
-      <label><input type="checkbox" id="rerank"> AI review with Claude</label>
-      <label>Candidates <select id="k" style="width:auto;padding:4px 8px"><option>3</option><option selected>5</option><option>10</option></select></label>
-      <span id="aiNote"></span>
+    <div class="row" style="margin-top:12px">
+      <label class="toggle"><input type="checkbox" id="aiToggle"> AI review with Claude</label>
+      <span class="muted small" id="aiHint"></span>
     </div>
-  </section>
+    <div class="examples" id="examples"></div>
+  </div>
+  <div id="findOut"></div>
+</section>
 
-  <nav class="tabs" role="tablist">
-    <button role="tab" aria-selected="true" data-tab="results">Results</button>
-    <button role="tab" aria-selected="false" data-tab="mapping">Table mapping</button>
-    <button role="tab" aria-selected="false" data-tab="knowledge">Knowledge</button>
-    <button role="tab" aria-selected="false" data-tab="reviews">Review log</button>
-  </nav>
-
-  <section data-panel="results">
-    <div class="layout">
-      <div>
-        <div class="panel" id="recPanel"><div class="empty">Search for a target table, or a table and column, to see ranked source candidates.</div></div>
-        <div class="panel" id="candPanel" hidden></div>
-      </div>
-      <aside class="panel" id="ctxPanel"><h2>Related knowledge</h2><div class="meta">Passages from S2T sheets, Slack and notes appear here.</div></aside>
+<!-- BULK -->
+<section data-view="bulk" class="hide">
+  <h1>Bulk mapping</h1>
+  <p class="lead">Draft a source-to-target sheet for a whole table, or upload a list of target fields and download the recommendations as a spreadsheet.</p>
+  <div class="layout" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+    <div class="card">
+      <h2>Map a whole table</h2>
+      <div class="ta"><label for="mapTable">Target table</label><input id="mapTable" placeholder="Start typing a table name" role="combobox" aria-expanded="false"></div>
+      <div class="row" style="margin-top:12px"><button class="primary" id="mapBtn">Map every column</button></div>
     </div>
-  </section>
-
-  <section data-panel="mapping" hidden>
-    <div class="panel">
-      <div class="row" style="justify-content:space-between;margin-bottom:8px">
-        <h2 id="mapTitle" style="margin:0">Table mapping</h2>
-        <a id="csvLink" hidden><button class="small" type="button">Download S2T CSV</button></a>
-      </div>
-      <div class="scroll" id="mapBody"><div class="empty">Choose a target table and select <b>Map table</b> to draft a source-to-target sheet.</div></div>
+    <div class="card">
+      <h2>Upload a list of fields</h2>
+      <p class="muted small" style="margin-top:0">CSV or Excel with a <code>target_table</code> column and an optional <code>target_column</code> column. A blank column maps every column of that table. <a href="#" id="templateLink">Download a template</a>.</p>
+      <div class="drop" id="bulkDrop">Drop a file here or <label for="bulkFile" style="display:inline;color:var(--accent);cursor:pointer;font-size:inherit">browse</label><input type="file" id="bulkFile" accept=".csv,.xlsx" class="hide"></div>
+      <label class="toggle"><input type="checkbox" id="bulkAi"> AI review (up to <span id="maxAi">50</span> fields)</label>
     </div>
-  </section>
+  </div>
+  <div id="bulkOut"></div>
+</section>
 
-  <section data-panel="knowledge" hidden>
-    <div class="panel">
-      <h2>Knowledge base</h2>
-      <p class="meta">Upload S2T sheets (.csv, .xlsx), Slack channel exports (.json) or notes (.md, .txt). They are used as evidence immediately.</p>
-      <div class="row"><input type="file" id="upload" accept=".csv,.xlsx,.json,.md,.txt" style="max-width:360px"><button class="small" id="uploadBtn" type="button">Upload</button><span id="uploadMsg" class="meta"></span></div>
-      <div class="row" style="margin-top:12px"><input id="kq" placeholder="Search knowledge, e.g. product name"><button class="small" id="kqBtn" type="button">Search</button></div>
-      <div id="kList" style="margin-top:12px"></div>
-    </div>
-  </section>
+<!-- REVIEWS -->
+<section data-view="reviews" class="hide">
+  <h1>Decisions</h1>
+  <p class="lead">Every approval or rejection is recorded here. Approved mappings rank first in future searches and can be exported as an S2T sheet.</p>
+  <div class="card"><div class="row" style="margin-bottom:10px"><div class="kpis" id="decisionKpis"></div><span class="spacer"></span><a class="btn sm" id="approvedCsv">Download approved mappings</a></div>
+    <div class="scroll" id="reviewOut"></div></div>
+</section>
 
-  <section data-panel="reviews" hidden>
-    <div class="panel"><h2>Review log</h2><div class="scroll" id="reviewBody"></div></div>
-  </section>
+<!-- SETUP -->
+<section data-view="setup" class="hide">
+  <h1 id="setupTitle">Project setup</h1>
+  <p class="lead" id="setupLead">Upload metadata for both organizations, then add any documents that explain how fields relate. Everything stays in this project.</p>
+  <div class="steps-setup">
+    <div class="card" id="srcCard"></div>
+    <div class="card" id="tgtCard"></div>
+    <div class="card" id="docCard"></div>
+  </div>
+  <details class="card more"><summary>What should the metadata files contain?</summary>
+    <p class="small">One row per column. Header names are flexible; these are recognized automatically:</p>
+    <table class="grid small"><tbody>
+      <tr><td><b>Table name</b> (required)</td><td>table_name, table_physical_name, table; optionally with database/catalog and schema columns</td></tr>
+      <tr><td><b>Column name</b> (required)</td><td>column_name, column_physical_name, field_name</td></tr>
+      <tr><td>Table business name / description</td><td>table_logical_name, data_product · table_description, table_comment</td></tr>
+      <tr><td>Column business name</td><td>column_logical_name, business_name, attribute_name, business_term</td></tr>
+      <tr><td>Column description</td><td>column_description, description, definition, comment</td></tr>
+      <tr><td>Data type / length</td><td>data_type, datatype, full_data_type · length, character_maximum_length</td></tr>
+      <tr><td>Platform</td><td>platform (SNOWFLAKE or DATABRICKS); otherwise the platform chosen at upload</td></tr>
+    </tbody></table>
+    <p class="small muted">Tip: export straight from <code>INFORMATION_SCHEMA.COLUMNS</code> in Snowflake or Databricks, then add business names and descriptions from your data dictionary. Descriptions improve matching the most.</p>
+  </details>
+  <div class="card"><h2>Danger zone</h2><div class="row"><span class="muted small">Moves this project to the workspace trash folder.</span><span class="spacer"></span><button class="sm" id="deleteProject">Delete project</button></div></div>
+</section>
 </main>
 
-<dialog id="reviewDialog">
-  <form method="dialog" id="reviewForm">
-    <h2 id="reviewTitle">Record decision</h2>
-    <p class="meta ref" id="reviewPair"></p>
-    <label for="reviewer">Reviewer</label><input id="reviewer" required>
-    <label for="note" style="margin-top:8px">Note</label><textarea id="note" rows="3" placeholder="Why this is or is not the right source"></textarea>
-    <div class="actions" style="justify-content:flex-end"><button value="cancel" formnovalidate>Cancel</button><button class="primary" value="ok" id="reviewSubmit">Save</button></div>
+<dialog id="decisionDlg">
+  <form method="dialog">
+    <h2 id="dlgTitle">Record decision</h2>
+    <p class="mono small muted" id="dlgPair"></p>
+    <div id="whoWrap"><label for="who">Your name</label><input id="who" autocomplete="name"></div>
+    <label for="why" style="margin-top:10px">Note <span style="font-weight:400">(optional)</span></label>
+    <textarea id="why" rows="3" placeholder="What confirmed it, or why it is wrong"></textarea>
+    <div class="actions" style="justify-content:flex-end"><button value="cancel" formnovalidate>Cancel</button><button class="primary" value="ok" id="dlgOk">Save</button></div>
+  </form>
+</dialog>
+<dialog id="projectDlg">
+  <form method="dialog">
+    <h2>New mapping project</h2>
+    <p class="muted small">A project holds one source and one target metadata set, plus reference documents and decisions.</p>
+    <label for="pName">Name</label><input id="pName" maxlength="80" placeholder="e.g. Warehouse consolidation wave 2">
+    <label for="pDesc" style="margin-top:10px">Description <span style="font-weight:400">(optional)</span></label><input id="pDesc" maxlength="500">
+    <div class="actions" style="justify-content:flex-end"><button value="cancel" formnovalidate>Cancel</button><button class="primary" value="ok">Create</button></div>
   </form>
 </dialog>
 
 <script>
 const $ = s => document.querySelector(s);
-const esc = v => String(v ?? "—").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const store = { get(k){ try { return localStorage.getItem(k); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} } };
-let current = null, status = null;
+const S = { config: {}, projects: [], pid: null, project: null, result: null };
+const DECISION_COLOR = { use: "use", review: "review", research: "research", no_source: "no_source" };
 
-async function api(path, options = {}) {
-  const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...options });
-  if (!res.ok) { let msg = res.statusText; try { msg = (await res.json()).detail || msg; } catch {} throw new Error(msg); }
+async function api(path, opts = {}) {
+  const res = await fetch(path, opts.body instanceof FormData ? opts : { headers: { "Content-Type": "application/json" }, ...opts });
+  if (!res.ok) { let m = res.statusText; try { m = (await res.json()).detail || m; } catch {} const e = new Error(m); e.status = res.status; throw e; }
   return res.json();
 }
+const P = path => `/api/projects/${encodeURIComponent(S.pid)}${path}`;
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+function toast(msg) { const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.append(t); setTimeout(() => t.remove(), 2600); }
+function busy(el, msg) { el.innerHTML = `<div class="card empty">${esc(msg)}</div>`; }
 
-async function loadStatus() {
-  status = await api("/api/status");
-  const k = status.knowledge;
-  $("#status").innerHTML = [
-    `Source <b>${status.source.tables}</b> tables · <b>${status.source.columns}</b> cols`,
-    `Target <b>${status.target.tables}</b> tables · <b>${status.target.columns}</b> cols`,
-    `Knowledge <b>${status.s2t_rows}</b> S2T rows · <b>${k.slack || 0}</b> threads · <b>${k.doc || 0}</b> notes`,
-    `Reviews <b>${status.reviews}</b>`,
-    status.embeddings ? `Embeddings <b>on</b>` : `Embeddings <b>off</b>`,
-    status.llm ? `AI review <b>${esc(status.llm)}</b>` : `AI review <b>off</b>`,
-  ].map(t => `<span class="chip">${t}</span>`).join("");
-  $("#rerank").disabled = !status.llm;
-  $("#aiNote").textContent = status.llm ? "" : "AI review needs ANTHROPIC_API_KEY or `ant auth login`.";
-  const tables = await api("/api/tables?limit=500");
-  $("#tableList").innerHTML = tables.map(t => `<option value="${esc(t.name)}">${esc(t.logical_name || "")} · ${t.platform}</option>`).join("");
+/* ---------------- routing ---------------- */
+function route() {
+  const view = (location.hash || "#find").slice(1).split("?")[0];
+  document.querySelectorAll("[data-view]").forEach(s => s.classList.toggle("hide", s.dataset.view !== view));
+  document.querySelectorAll("nav.views a").forEach(a => {
+    if (a.getAttribute("href") === "#" + view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+  if (view === "reviews") loadReviews();
+  if (view === "setup") renderSetup();
 }
+window.addEventListener("hashchange", route);
 
-$("#table").addEventListener("change", async () => {
-  $("#columnList").innerHTML = "";
-  try {
-    const t = await api(`/api/table?name=${encodeURIComponent($("#table").value)}`);
-    $("#columnList").innerHTML = t.columns.map(c => `<option value="${esc(c.name)}">${esc(c.logical_name || "")} · ${esc(c.data_type)}</option>`).join("");
-  } catch {}
+/* ---------------- projects ---------------- */
+async function loadProjects(selectId) {
+  S.projects = await api("/api/projects");
+  const sel = $("#projectSel");
+  sel.innerHTML = S.projects.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("") || `<option value="">No projects</option>`;
+  const wanted = selectId || store.get("project");
+  S.pid = S.projects.some(p => p.id === wanted) ? wanted : (S.projects[0] || {}).id || null;
+  if (S.pid) sel.value = S.pid;
+  await loadProject();
+}
+async function loadProject() {
+  if (!S.pid) { S.project = null; location.hash = "#setup"; renderSetup(); return; }
+  store.set("project", S.pid);
+  S.project = await api(P(""));
+  $("#findOut").innerHTML = ""; $("#bulkOut").innerHTML = "";
+  ["#tTable", "#tColumn", "#mapTable"].forEach(s => $(s).value = "");
+  renderExamples();
+  if (!S.project.ready && location.hash !== "#setup") location.hash = "#setup";
+  route();
+}
+$("#projectSel").addEventListener("change", e => { S.pid = e.target.value; loadProject(); });
+$("#newProjectBtn").addEventListener("click", () => { $("#pName").value = ""; $("#pDesc").value = ""; $("#projectDlg").showModal(); });
+$("#projectDlg").addEventListener("close", async () => {
+  if ($("#projectDlg").returnValue !== "ok" || !$("#pName").value.trim()) return;
+  try { const p = await api("/api/projects", { method: "POST", body: JSON.stringify({ name: $("#pName").value, description: $("#pDesc").value }) });
+    location.hash = "#setup"; await loadProjects(p.id); toast("Project created. Upload metadata to begin."); } catch (e) { toast(e.message); }
+});
+$("#deleteProject").addEventListener("click", async () => {
+  if (!S.pid || !confirm(`Delete project "${S.project.name}"? It is moved to the workspace trash folder.`)) return;
+  await api(P(""), { method: "DELETE" }); store.set("project", ""); await loadProjects(); toast("Project deleted.");
 });
 
-function gauge(score, band) {
-  const color = `var(--${band})`, bg = `var(--${band}-bg)`;
-  return `<div class="gauge" style="background:conic-gradient(${color} ${score * 3.6}deg, ${bg} 0)"><div class="gauge" style="width:58px;height:58px;background:var(--panel);font-size:1.1rem">${Math.round(score)}</div></div>`;
+/* ---------------- typeahead ---------------- */
+function typeahead(input, fetcher, onPick) {
+  const wrap = input.parentElement; let list = null, items = [], idx = -1, timer;
+  const close = () => { list?.remove(); list = null; idx = -1; input.setAttribute("aria-expanded", "false"); };
+  const render = () => {
+    close(); if (!items.length) return;
+    list = document.createElement("ul"); list.setAttribute("role", "listbox");
+    list.innerHTML = items.map((it, i) => `<li role="option" data-i="${i}" aria-selected="${i === idx}"><span><span class="v">${esc(it.value)}</span>${it.label ? `<br><span class="muted small">${esc(it.label)}</span>` : ""}</span><span class="d">${esc(it.detail || "")}${it.columns ? `<br>${it.columns} cols` : ""}</span></li>`).join("");
+    list.addEventListener("mousedown", e => { const li = e.target.closest("li"); if (li) { e.preventDefault(); pick(+li.dataset.i); } });
+    wrap.append(list); input.setAttribute("aria-expanded", "true");
+  };
+  const pick = i => { input.value = items[i].value; close(); onPick && onPick(items[i]); };
+  const load = async () => { try { items = await fetcher(input.value); } catch { items = []; } idx = -1; if (document.activeElement === input) render(); };
+  input.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(load, 120); });
+  input.addEventListener("focus", load);
+  input.addEventListener("blur", () => setTimeout(close, 120));
+  input.addEventListener("keydown", e => {
+    if (!list) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); idx = (idx + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length; render(); }
+    else if (e.key === "Enter" && idx >= 0) { e.preventDefault(); pick(idx); }
+    else if (e.key === "Escape") close();
+  });
 }
-function refOf(c) {
-  return `<span class="tbl">${esc(c.source_table.name)}</span>${c.source_column ? "." + `<b>${esc(c.source_column.name)}</b>` : ""}`;
+const suggestTables = q => S.project?.ready ? api(P(`/suggest?q=${encodeURIComponent(q)}`)) : Promise.resolve([]);
+typeahead($("#tTable"), suggestTables, () => { $("#tColumn").value = ""; $("#tColumn").focus(); });
+typeahead($("#tColumn"), q => $("#tTable").value && S.project?.ready ? api(P(`/suggest?table=${encodeURIComponent($("#tTable").value)}&q=${encodeURIComponent(q)}`)) : Promise.resolve([]));
+typeahead($("#mapTable"), suggestTables);
+
+/* ---------------- find ---------------- */
+function renderExamples() {
+  const demo = /demo/i.test(S.project?.name || "");
+  const ex = demo ? [["lumen.sales.orders", ""], ["lumen.sales.orders", "order_total_amount"], ["LUMEN_DW.CUSTOMER.CUSTOMER_PROFILE", "SIGNUP_DATE"], ["lumen.product.product_catalog", "product_name"], ["LUMEN_DW.CUSTOMER.CUSTOMER_PROFILE", "MARKETING_OPT_IN"], ["lumen.marketing.customer_reviews", ""]] : [];
+  $("#examples").innerHTML = ex.length ? `<span class="muted small" style="align-self:center">Try:</span>` + ex.map(([t, c]) => `<button type="button" class="chip" data-t="${esc(t)}" data-c="${esc(c)}">${esc(t.split(".").pop())}${c ? "." + esc(c) : ""}</button>`).join("") : "";
 }
-function evidenceHtml(list) {
-  if (!list.length) return "";
-  return `<div class="evid">${list.map(e => `<div class="ev ${e.strength > 0 ? "pos" : "neg"}"><b>${esc(e.kind.toUpperCase())}</b> · ${esc(e.summary)} <span class="meta">(${esc(e.source)})</span>${e.snippet ? `<q>${esc(e.snippet)}</q>` : ""}</div>`).join("")}</div>`;
-}
+$("#examples").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; $("#tTable").value = b.dataset.t; $("#tColumn").value = b.dataset.c; $("#findForm").requestSubmit(); });
+
+$("#findForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const ai = $("#aiToggle").checked;
+  busy($("#findOut"), ai ? "Searching and asking Claude to review the shortlist…" : "Searching source metadata and team knowledge…");
+  try {
+    const r = await api(P("/match"), { method: "POST", body: JSON.stringify({ table: $("#tTable").value, column: $("#tColumn").value || null, k: 5, rerank: ai }) });
+    renderResult(r);
+  } catch (err) { $("#findOut").innerHTML = `<div class="card err">${esc(err.message)}</div>`; }
+});
+
+const sourceName = c => c.source_table.name + (c.source_column ? "." + c.source_column.name : "");
+function describe(item) { return [item.logical_name, item.data_type, item.length ? `length ${item.length}` : ""].filter(Boolean).map(esc).join(" · "); }
 
 function renderResult(r) {
-  current = r;
-  const rec = r.recommendation, t = r.target;
-  const name = t.table.name + (t.column ? "." + t.column.name : "");
-  const detail = t.column ? `${esc(t.column.logical_name)} · ${esc(t.column.data_type)} — ${esc(t.column.description)}` : `${esc(t.table.logical_name)} · ${esc(t.table.platform)} — ${esc(t.table.description)}`;
-  const warn = (r.warnings || []).map(w => `<div class="warnbox"><b>Knowledge warning:</b> ${esc(w.summary)}<br><span class="meta">${esc(w.snippet)}</span></div>`).join("");
-  $("#recPanel").innerHTML = `<div class="rec">${gauge(rec.confidence, rec.band)}<div>
-      <div class="ref">${esc(name)}</div><div class="meta">${detail}</div>
-      <div style="margin-top:6px"><span class="band b-${rec.band}">${rec.band}</span> ${esc(rec.text)} <span class="meta">· lead ${rec.margin.toFixed(1)} pts</span></div>
-      ${rec.summary ? `<div class="ai"><b>AI review:</b> ${esc(rec.summary)}${rec.transformation ? `<br><b>Load rule:</b> <code>${esc(rec.transformation)}</code>` : ""}</div>` : ""}
-    </div></div>${warn}`;
+  S.result = r;
+  const a = r.advice, rec = r.recommendation, t = r.target, top = r.candidates[0];
+  const tItem = t.column || t.table;
+  const color = DECISION_COLOR[a.decision];
+  const canDecide = top && a.decision !== "no_source";
+  const decision = `
+  <div class="card decision" style="--dc:var(--${color})">
+    <div class="label">${esc(a.label)}</div>
+    <div class="headline">${esc(a.headline)}</div>
+    <div class="target-line">For <span class="mono">${esc(t.table.name)}${t.column ? "." + esc(t.column.name) : ""}</span>${describe(tItem) ? " · " + describe(tItem) : ""}${tItem.description ? ` — ${esc(tItem.description)}` : ""}</div>
+    <div class="meter"><b>${Math.round(rec.confidence)}</b><span class="muted small">/ 100 confidence</span><div class="track"><div class="fill" style="width:${Math.min(100, rec.confidence)}%"></div></div></div>
+    ${top && canDecide ? `<div class="small muted">Source: ${describe(top.source_column || top.source_table)}${(top.source_column || top.source_table).description ? " — " + esc((top.source_column || top.source_table).description) : ""}</div>` : ""}
+    <div class="cols2">
+      <div><h3>Why</h3><ul class="list">${a.why.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
+      <div><h3>${a.decision === "no_source" ? "What to do next" : "Check before using"}</h3>${a.checks.length ? `<ul class="list checks">${a.checks.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : `<p class="muted small" style="margin:0">Nothing flagged. A quick look at sample values is still good practice.</p>`}</div>
+    </div>
+    ${rec.summary ? `<div class="ai"><b>AI review:</b> ${esc(rec.summary)}${rec.transformation ? `<br><b>Load rule:</b> <code>${esc(rec.transformation)}</code>` : ""}</div>` : ""}
+    ${(r.warnings || []).map(w => `<div class="warnbox"><b>From your documents:</b> ${esc(w.snippet || w.summary)} <span class="muted">(${esc(w.source)})</span></div>`).join("")}
+    ${canDecide ? `<div class="actions"><button class="primary" data-decide="approved" data-rank="1">Approve this mapping</button><button data-decide="rejected" data-rank="1">Reject</button><button class="ghost" data-decide="needs_research" data-rank="1">Needs research</button></div>` : ""}
+    <details class="trace" style="margin-top:14px"><summary>How we found this</summary><ol class="steps">${r.trace.map(s => `<li><b>${esc(s.step)}</b><span class="muted small">${esc(s.detail)}</span></li>`).join("")}</ol></details>
+  </div>`;
   const cands = r.candidates.map(c => `
     <div class="cand">
-      <div class="cand-head"><div class="ref"><span class="rank">#${c.rank}</span>${refOf(c)}</div>
-        <div><span class="band b-${c.band}">${c.band}</span> <b>${c.score.toFixed(1)}</b>${c.heuristic_score != null ? ` <span class="meta">(heuristic ${c.heuristic_score.toFixed(1)})</span>` : ""}</div></div>
+      <div class="cand-h"><div class="mono"><b>#${c.rank}</b> ${esc(sourceName(c))}</div><div><span class="pill" style="color:var(--${c.band});background:var(--${c.band}-bg)">${c.band}</span> <b>${c.score.toFixed(0)}</b></div></div>
       <div class="bar"><span style="width:${Math.min(100, c.score)}%"></span></div>
-      <div class="meta">${c.source_column ? `${esc(c.source_column.logical_name)} · ${esc(c.source_column.data_type)} — ${esc(c.source_column.description)}` : `${esc(c.source_table.logical_name)} — ${esc(c.source_table.description)}`}</div>
-      <ul class="reasons">${c.reasons.filter(x => !c.evidence.some(e => e.summary === x)).map(x =>`<li>${esc(x)}</li>`).join("")}${c.issues.map(x => `<li class="issue">${esc(x)}</li>`).join("")}</ul>
-      ${c.llm ? `<div class="ai"><b>AI verdict:</b> ${esc(c.llm.verdict.replace("_", " "))} (${c.llm.confidence}) — ${esc(c.llm.rationale)}</div>` : ""}
-      ${evidenceHtml(c.evidence.filter(e => !(r.warnings || []).some(w => w.snippet === e.snippet)))}
-      <div class="actions"><button class="small" data-act="approved" data-rank="${c.rank}">Approve</button><button class="small" data-act="rejected" data-rank="${c.rank}">Reject</button></div>
+      <div class="small muted">${describe(c.source_column || c.source_table)}${(c.source_column || c.source_table).description ? " — " + esc((c.source_column || c.source_table).description) : ""}</div>
+      ${c.llm ? `<div class="ai small"><b>AI:</b> ${esc(c.llm.verdict.replace("_", " "))} (${c.llm.confidence}) — ${esc(c.llm.rationale)}</div>` : ""}
+      <details class="more" style="margin-top:6px"><summary>Details</summary>
+        <ul class="list small">${c.reasons.filter(x => !c.evidence.some(e => e.summary === x)).map(x => `<li>${esc(x)}</li>`).join("")}${c.issues.map(x => `<li class="err">${esc(x)}</li>`).join("")}</ul>
+        ${c.evidence.map(e => `<div class="ev ${e.strength > 0 ? "pos" : "neg"}"><b>${esc(e.kind.toUpperCase())}</b> · ${esc(e.summary)} <span class="muted">(${esc(e.source)})</span>${e.snippet ? `<q>${esc(e.snippet)}</q>` : ""}</div>`).join("")}
+      </details>
+      ${c.rank > 1 ? `<div class="actions" style="margin-top:8px"><button class="sm" data-decide="approved" data-rank="${c.rank}">Approve instead</button><button class="sm ghost" data-decide="rejected" data-rank="${c.rank}">Reject</button></div>` : ""}
     </div>`).join("");
-  $("#candPanel").hidden = false;
-  $("#candPanel").innerHTML = `<h2>Candidates</h2>${cands || '<div class="empty">No candidates.</div>'}`;
-  $("#ctxPanel").innerHTML = `<h2>Related knowledge</h2>` + (r.context.length ? r.context.map(c => `<div class="ctx"><div class="t">${esc(c.title)}</div><div class="meta">${esc(c.kind)} · relevance ${(c.score * 100).toFixed(0)}%</div><pre>${esc(c.text)}</pre></div>`).join("") : `<div class="meta">No related passages found.</div>`);
+  const ctx = r.context.length ? r.context.map(c => `<div class="ctx"><b>${esc(c.title)}</b><div class="muted small">${esc(c.kind)} · relevance ${(c.score * 100).toFixed(0)}%</div><pre>${esc(c.text)}</pre></div>`).join("") : `<p class="muted small">No related passages. Add S2T sheets, Slack exports or notes in Project setup to strengthen recommendations.</p>`;
+  $("#findOut").innerHTML = `<div class="layout"><div>${decision}<div class="card"><h2>All candidates</h2>${cands || '<div class="empty">No candidates.</div>'}</div></div><aside class="card"><h2>Related team knowledge</h2>${ctx}</aside></div>`;
 }
 
-function showTab(name) {
-  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
-  document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== name);
-  if (name === "reviews") loadReviews();
-  if (name === "knowledge" && !$("#kList").innerHTML) searchKnowledge();
-}
-document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
-
-function busy(el, msg) { el.innerHTML = `<div class="empty">${msg}</div>`; }
-
-$("#searchForm").addEventListener("submit", async e => {
-  e.preventDefault(); showTab("results");
-  busy($("#recPanel"), $("#rerank").checked ? "Matching and asking Claude to review…" : "Matching…"); $("#candPanel").hidden = true;
-  try {
-    renderResult(await api("/api/match", { method: "POST", body: JSON.stringify({ table: $("#table").value, column: $("#column").value || null, k: +$("#k").value, rerank: $("#rerank").checked }) }));
-  } catch (err) { $("#recPanel").innerHTML = `<div class="error">${esc(err.message)}</div>`; }
-});
-
-$("#mapBtn").addEventListener("click", async () => {
-  if (!$("#table").value) { $("#table").focus(); return; }
-  showTab("mapping"); busy($("#mapBody"), "Mapping every column…");
-  try {
-    const r = await api("/api/map-table", { method: "POST", body: JSON.stringify({ table: $("#table").value, k: 3 }) });
-    const top = r.table.candidates[0];
-    $("#mapTitle").innerHTML = `${esc(r.target.name)} <span class="meta">← ${top ? esc(top.source_table.name) : "no table match"} (${r.table.recommendation.confidence.toFixed(0)})</span>`;
-    $("#csvLink").href = `/api/map-table.csv?table=${encodeURIComponent(r.target.id)}`; $("#csvLink").hidden = false;
-    $("#mapBody").innerHTML = `<table class="grid"><thead><tr><th>Target column</th><th>Suggested source</th><th>Score</th><th>Band</th><th>Notes</th><th></th></tr></thead><tbody>${
-      r.columns.map((c, i) => { const s = c.candidates[0]; return `<tr>
-        <td class="ref">${esc(c.target.column.name)}<div class="meta">${esc(c.target.column.data_type)}</div></td>
-        <td class="ref">${s ? refOf(s) : "—"}${c.candidates[1] ? `<div class="meta">alt: ${esc(c.candidates[1].source_column.name)} (${c.candidates[1].score.toFixed(0)})</div>` : ""}</td>
-        <td class="num">${c.recommendation.confidence.toFixed(1)}</td>
-        <td><span class="band b-${c.recommendation.band}">${c.recommendation.band}</span></td>
-        <td class="meta">${esc([...(c.warnings || []).map(w => w.summary), ...(s ? s.issues : []), ...(s ? s.evidence.filter(e => e.strength > 0).map(e => e.summary) : [])].join(" · ") || "")}</td>
-        <td><button class="small" data-open="${esc(c.target.column.name)}">Details</button></td></tr>`; }).join("")}</tbody></table>`;
-  } catch (err) { $("#mapBody").innerHTML = `<div class="error">${esc(err.message)}</div>`; }
-});
-$("#mapBody").addEventListener("click", e => {
-  const col = e.target.dataset.open; if (!col) return;
-  $("#column").value = col; $("#searchForm").requestSubmit();
-});
-
+/* ---------------- decisions ---------------- */
 let pending = null;
-$("#candPanel").addEventListener("click", e => {
-  const act = e.target.dataset.act; if (!act || !current) return;
-  const c = current.candidates.find(x => x.rank === +e.target.dataset.rank);
-  pending = { decision: act, cand: c };
-  $("#reviewTitle").textContent = act === "approved" ? "Approve mapping" : "Reject mapping";
-  $("#reviewPair").textContent = `${current.target.table.name}${current.target.column ? "." + current.target.column.name : ""} ← ${c.source_table.name}${c.source_column ? "." + c.source_column.name : ""}`;
-  $("#reviewer").value = store.get("reviewer") || ""; $("#note").value = "";
-  $("#reviewDialog").showModal();
+$("#findOut").addEventListener("click", e => {
+  const b = e.target.closest("[data-decide]"); if (!b || !S.result) return;
+  const c = S.result.candidates.find(x => x.rank === +b.dataset.rank);
+  pending = { decision: b.dataset.decide, c };
+  $("#dlgTitle").textContent = { approved: "Approve mapping", rejected: "Reject mapping", needs_research: "Mark as needs research" }[pending.decision];
+  const t = S.result.target;
+  $("#dlgPair").textContent = `${t.table.name}${t.column ? "." + t.column.name : ""}  ←  ${sourceName(c)}`;
+  $("#whoWrap").classList.toggle("hide", !!S.config.user);
+  $("#who").value = store.get("reviewer") || ""; $("#who").required = !S.config.user; $("#why").value = "";
+  $("#decisionDlg").showModal();
 });
-$("#reviewDialog").addEventListener("close", async () => {
-  if ($("#reviewDialog").returnValue !== "ok" || !pending) return;
-  store.set("reviewer", $("#reviewer").value);
-  const t = current.target, c = pending.cand;
+$("#decisionDlg").addEventListener("close", async () => {
+  if ($("#decisionDlg").returnValue !== "ok" || !pending) return;
+  if (!S.config.user) store.set("reviewer", $("#who").value);
+  const t = S.result.target, c = pending.c;
   try {
-    await api("/api/feedback", { method: "POST", body: JSON.stringify({ target_table: t.table.id, target_column: t.column ? t.column.name : null,
-      source_table: c.source_table.id, source_column: c.source_column ? c.source_column.name : null,
-      decision: pending.decision, reviewer: $("#reviewer").value, note: $("#note").value, confidence: c.score }) });
-    loadStatus(); $("#searchForm").requestSubmit();
-  } catch (err) { alert(err.message); }
+    await api(P("/feedback"), { method: "POST", body: JSON.stringify({ target_table: t.table.id, target_column: t.column ? t.column.name : null, source_table: c.source_table.id, source_column: c.source_column ? c.source_column.name : null, decision: pending.decision, reviewer: $("#who").value, note: $("#why").value, confidence: c.score }) });
+    toast("Decision saved."); $("#findForm").requestSubmit();
+  } catch (err) { toast(err.message); }
 });
 
 async function loadReviews() {
-  const rows = await api("/api/feedback");
-  $("#reviewBody").innerHTML = rows.length ? `<table class="grid"><thead><tr><th>When</th><th>Target</th><th>Source</th><th>Decision</th><th>Reviewer</th><th>Note</th></tr></thead><tbody>${
-    rows.map(r => `<tr><td class="meta">${esc(r.created_at.slice(0, 16).replace("T", " "))}</td><td class="ref">${esc(r.target_table)}${r.target_column ? "." + esc(r.target_column) : ""}</td>
-      <td class="ref">${esc(r.source_table)}${r.source_column ? "." + esc(r.source_column) : ""}</td>
-      <td><span class="band ${r.decision === "approved" ? "b-high" : r.decision === "rejected" ? "b-low" : "b-none"}">${esc(r.decision)}</span></td>
-      <td>${esc(r.reviewer)}</td><td class="meta">${esc(r.note)}</td></tr>`).join("")}</tbody></table>` : `<div class="empty">No decisions yet. Approve or reject candidates to build an audit trail; approvals boost future matches.</div>`;
+  if (!S.project?.ready) { $("#reviewOut").innerHTML = `<div class="empty">Finish project setup first.</div>`; return; }
+  const rows = await api(P("/feedback"));
+  const latest = {}; rows.slice().reverse().forEach(r => latest[[r.target_table, r.target_column, r.source_table, r.source_column].join("|")] = r.decision);
+  const n = d => Object.values(latest).filter(x => x === d).length;
+  $("#decisionKpis").innerHTML = [["Approved", n("approved")], ["Rejected", n("rejected")], ["Needs research", n("needs_research")]].map(([k, v]) => `<div class="kpi"><b>${v}</b>${k}</div>`).join("");
+  $("#approvedCsv").href = P("/approved.csv");
+  $("#reviewOut").innerHTML = rows.length ? `<table class="grid"><thead><tr><th>When</th><th>Target</th><th>Source</th><th>Decision</th><th>By</th><th>Note</th></tr></thead><tbody>${rows.map(r => `<tr><td class="muted">${esc(r.created_at.slice(0, 16).replace("T", " "))}</td><td class="mono">${esc(r.target_table.split(":").pop())}${r.target_column ? "." + esc(r.target_column) : ""}</td><td class="mono">${esc(r.source_table.split(":").pop())}${r.source_column ? "." + esc(r.source_column) : ""}</td><td><span class="pill" style="color:var(--${r.decision === "approved" ? "use" : r.decision === "rejected" ? "research" : "no_source"});background:var(--${r.decision === "approved" ? "use" : r.decision === "rejected" ? "research" : "no_source"}-bg)">${esc(r.decision.replace("_", " "))}</span></td><td>${esc(r.reviewer)}</td><td class="muted">${esc(r.note)}</td></tr>`).join("")}</tbody></table>` : `<div class="empty">No decisions yet. Approve or reject recommendations on the Find a source page.</div>`;
 }
 
-async function searchKnowledge() {
-  const q = $("#kq").value;
-  const rows = await api(`/api/knowledge?q=${encodeURIComponent(q)}`);
-  $("#kList").innerHTML = rows.length ? rows.map(c => `<div class="ctx"><div class="t">${esc(c.title)}</div><div class="meta">${esc(c.kind)} · ${esc(c.source)}${c.score != null ? ` · relevance ${(c.score * 100).toFixed(0)}%` : ""}</div><pre>${esc(c.text)}</pre></div>`).join("") : `<div class="empty">No passages.</div>`;
+/* ---------------- bulk ---------------- */
+function bulkTable(rows, title, csvHref, counts, errors = []) {
+  const pill = d => { const k = { "Use this source": "use", "Likely source, confirm before using": "review", "Possible source, needs research": "research" }[d] || "no_source"; return `<span class="pill" style="color:var(--${k});background:var(--${k}-bg)">${esc({ use: "Use", review: "Confirm", research: "Research", no_source: "No source" }[k])}</span>`; };
+  return `<div class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">${title}</h2><span class="spacer"></span><a class="btn sm primary" href="${csvHref}">Download spreadsheet (CSV)</a></div>
+    <div class="kpis">${Object.entries(counts).map(([k, v]) => `<div class="kpi"><b>${v}</b>${esc(k)}</div>`).join("")}</div>
+    ${errors.length ? `<div class="warnbox">${errors.length} row(s) skipped: ${errors.slice(0, 5).map(e => esc(`${e.table}${e.column ? "." + e.column : ""} (${e.error})`)).join("; ")}</div>` : ""}
+    <div class="scroll"><table class="grid"><thead><tr><th>Target</th><th>Recommended source</th><th>Confidence</th><th>Decision</th><th>Check before using</th><th></th></tr></thead><tbody>${rows.map(r => `<tr>
+      <td class="mono">${esc(r.target_table.split(".").pop())}.<b>${esc(r.target_column)}</b><div class="muted small">${esc(r.target_datatype)}</div></td>
+      <td class="mono">${r.suggested_source_table ? esc(r.suggested_source_table.split(".").pop()) + ".<b>" + esc(r.suggested_source_column) + "</b>" : "—"}<div class="muted small">${esc(r.source_business_name)}</div></td>
+      <td class="num">${Math.round(r.confidence)}</td><td>${pill(r.decision)}</td>
+      <td class="small muted" style="min-width:220px">${esc(r.checks_before_use.split(" | ")[0] || "")}</td>
+      <td><button class="sm" data-open-t="${esc(r.target_table)}" data-open-c="${esc(r.target_column)}">Open</button></td></tr>`).join("")}</tbody></table></div></div>`;
 }
-$("#kqBtn").addEventListener("click", searchKnowledge);
-$("#kq").addEventListener("keydown", e => { if (e.key === "Enter") searchKnowledge(); });
-$("#uploadBtn").addEventListener("click", async () => {
-  const f = $("#upload").files[0]; if (!f) return;
-  const body = new FormData(); body.append("file", f);
-  const res = await fetch("/api/knowledge/upload", { method: "POST", body });
-  const data = await res.json();
-  $("#uploadMsg").textContent = res.ok ? `Added ${data.chunks} passages from ${data.file}.` : data.detail;
-  loadStatus(); searchKnowledge();
+$("#bulkOut").addEventListener("click", e => {
+  const b = e.target.closest("[data-open-t]"); if (!b) return;
+  $("#tTable").value = b.dataset.openT; $("#tColumn").value = b.dataset.openC; location.hash = "#find"; $("#findForm").requestSubmit();
+});
+$("#mapBtn").addEventListener("click", async () => {
+  if (!$("#mapTable").value) { $("#mapTable").focus(); return; }
+  busy($("#bulkOut"), "Mapping every column…");
+  try {
+    const r = await api(P("/map-table"), { method: "POST", body: JSON.stringify({ table: $("#mapTable").value }) });
+    const rows = r.columns.map(c => { const top = c.advice.decision !== "no_source" ? c.candidates[0] : null; return { target_table: c.target.table.name, target_column: c.target.column.name, target_datatype: c.target.column.data_type || "", decision: c.advice.label, confidence: c.recommendation.confidence, suggested_source_table: top ? top.source_table.name : "", suggested_source_column: top ? top.source_column.name : "", source_business_name: top ? top.source_column.logical_name || "" : "", checks_before_use: c.advice.checks.join(" | ") }; });
+    const counts = {}; rows.forEach(x => counts[x.decision] = (counts[x.decision] || 0) + 1);
+    $("#bulkOut").innerHTML = bulkTable(rows, `${esc(r.target.name)} ← ${esc(r.table.candidates[0]?.source_table.name || "no table match")}`, P(`/map-table.csv?table=${encodeURIComponent(r.target.id)}`), counts);
+  } catch (err) { $("#bulkOut").innerHTML = `<div class="card err">${esc(err.message)}</div>`; }
+});
+async function runBulk(file) {
+  if (!file) return;
+  busy($("#bulkOut"), `Matching fields from ${file.name}…`);
+  const fd = new FormData(); fd.append("file", file); fd.append("rerank", $("#bulkAi").checked);
+  try {
+    const r = await api(P("/bulk"), { method: "POST", body: fd });
+    $("#bulkOut").innerHTML = bulkTable(r.rows, `${r.rows.length} fields from ${esc(file.name)}`, P(`/exports/${r.export}.csv`), r.counts, r.errors);
+  } catch (err) { $("#bulkOut").innerHTML = `<div class="card err">${esc(err.message)}</div>`; }
+}
+$("#bulkFile").addEventListener("change", e => runBulk(e.target.files[0]));
+function dropzone(el, onFile) {
+  el.addEventListener("dragover", e => { e.preventDefault(); el.classList.add("over"); });
+  el.addEventListener("dragleave", () => el.classList.remove("over"));
+  el.addEventListener("drop", e => { e.preventDefault(); el.classList.remove("over"); onFile(e.dataTransfer.files[0]); });
+}
+dropzone($("#bulkDrop"), runBulk);
+$("#templateLink").addEventListener("click", e => {
+  e.preventDefault();
+  const blob = new Blob(["target_table,target_column\nmy_catalog.sales.orders,order_total_amount\nmy_catalog.sales.orders,\n"], { type: "text/csv" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "bulk_mapping_template.csv"; a.click();
 });
 
-loadStatus().catch(err => { $("#status").innerHTML = `<span class="error">${esc(err.message)}</span>`; });
+/* ---------------- setup ---------------- */
+function metaCard(side, n, title, blurb) {
+  const p = S.project || {}, rep = p[`${side}_report`];
+  return `<h2><span class="step-n ${rep ? "done" : ""}">${n}</span>${title}</h2><p class="muted small" style="margin-top:0">${blurb}</p>
+    ${rep ? `<div class="stat"><span><b>${rep.tables}</b> table${rep.tables === 1 ? "" : "s"}</span><span><b>${rep.columns}</b> column${rep.columns === 1 ? "" : "s"}</span><span><b>${rep.with_description}%</b> described</span></div>
+      <div class="muted small" style="margin-top:4px">${esc(rep.file)} · ${esc((rep.platforms || []).join(", "))} · ${esc((rep.uploaded_at || "").slice(0, 10))}</div>
+      ${rep.tips?.length ? `<ul class="tips">${rep.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : ""}` : ""}
+    <div class="row" style="margin-top:12px"><label for="${side}Platform" class="hide">Platform</label><select id="${side}Platform" style="width:auto"><option value="SNOWFLAKE">Snowflake</option><option value="DATABRICKS">Databricks</option></select><span class="muted small">default platform</span></div>
+    <div class="drop" data-side="${side}">${rep ? "Replace: drop" : "Drop"} a CSV or Excel file here or <label for="${side}File" style="display:inline;color:var(--accent);cursor:pointer;font-size:inherit">browse</label><input type="file" id="${side}File" accept=".csv,.xlsx" class="hide"></div>
+    <div class="small" id="${side}Msg"></div>`;
+}
+function renderSetup() {
+  const p = S.project;
+  if (!p) {
+    $("#setupTitle").textContent = "Create your first project";
+    $("#setupLead").textContent = "Select New in the top bar to create a project, then upload metadata.";
+    ["#srcCard", "#tgtCard", "#docCard"].forEach(s => $(s).innerHTML = ""); return;
+  }
+  $("#setupTitle").textContent = p.name;
+  $("#setupLead").textContent = (p.description ? p.description + " " : "") + (p.ready ? "This project is ready. Replace files at any time; changes apply immediately." : "Upload metadata for both organizations to start matching.");
+  $("#srcCard").innerHTML = metaCard("source", 1, "Source metadata", "The organization or system you are migrating from.");
+  $("#tgtCard").innerHTML = metaCard("target", 2, "Target metadata", "The data products you are building, in Snowflake or Databricks.");
+  const files = p.knowledge_files || [];
+  $("#docCard").innerHTML = `<h2><span class="step-n ${files.length ? "done" : ""}">3</span>Reference documents</h2>
+    <p class="muted small" style="margin-top:0">Optional but powerful: earlier S2T mapping sheets (.csv, .xlsx), Slack channel exports (.json) and notes (.md, .txt).</p>
+    ${files.length ? `<table class="grid small"><tbody>${files.map(f => `<tr><td class="mono">${esc(f)}</td><td style="text-align:right"><button class="sm ghost" data-rm="${esc(f)}" aria-label="Remove ${esc(f)}">Remove</button></td></tr>`).join("")}</tbody></table>` : ""}
+    <div class="drop" data-side="docs">Drop a document here or <label for="docFile" style="display:inline;color:var(--accent);cursor:pointer;font-size:inherit">browse</label><input type="file" id="docFile" accept=".csv,.xlsx,.json,.md,.txt" class="hide"></div>
+    <div class="small" id="docsMsg"></div>
+    ${p.ready ? `<div class="row" style="margin-top:8px"><a class="btn primary sm" href="#find">Start finding sources</a></div>` : ""}`;
+  ["source", "target"].forEach(side => {
+    const rep = p[`${side}_report`]; if (rep && rep.platforms?.length === 1) $(`#${side}Platform`).value = rep.platforms[0];
+    $(`#${side}File`).addEventListener("change", e => uploadMeta(side, e.target.files[0]));
+    dropzone(document.querySelector(`.drop[data-side=${side}]`), f => uploadMeta(side, f));
+  });
+  $("#docFile").addEventListener("change", e => uploadDoc(e.target.files[0]));
+  dropzone(document.querySelector(".drop[data-side=docs]"), uploadDoc);
+}
+async function uploadMeta(side, file) {
+  if (!file) return;
+  $(`#${side}Msg`).textContent = "Reading " + file.name + "…";
+  const fd = new FormData(); fd.append("file", file); fd.append("platform", $(`#${side}Platform`).value);
+  try { const r = await api(P(`/metadata/${side}`), { method: "POST", body: fd }); S.project = await api(P("")); renderSetup(); toast(`Loaded ${plural(r.tables, "table")} and ${plural(r.columns, "column")}.`); }
+  catch (err) { $(`#${side}Msg`).innerHTML = `<span class="err">${esc(err.message)}</span>`; }
+}
+async function uploadDoc(file) {
+  if (!file) return;
+  $("#docsMsg").textContent = "Reading " + file.name + "…";
+  const fd = new FormData(); fd.append("file", file);
+  try { const r = await api(P("/knowledge"), { method: "POST", body: fd }); S.project = await api(P("")); renderSetup(); toast(`Added ${plural(r.passages, "passage")}${r.mappings ? `, ${plural(r.mappings, "S2T row")}` : ""}.`); }
+  catch (err) { $("#docsMsg").innerHTML = `<span class="err">${esc(err.message)}</span>`; }
+}
+$("#docCard").addEventListener("click", async e => {
+  const f = e.target.dataset.rm; if (!f || !confirm(`Remove ${f} from this project?`)) return;
+  await api(P(`/knowledge/${encodeURIComponent(f)}`), { method: "DELETE" }); S.project = await api(P("")); renderSetup();
+});
+
+/* ---------------- boot ---------------- */
+(async () => {
+  try {
+    S.config = await api("/api/config");
+    $("#aiToggle").disabled = $("#bulkAi").disabled = !S.config.ai_review;
+    $("#aiHint").textContent = S.config.ai_review ? `Claude (${S.config.ai_review}) double-checks the shortlist and writes a load rule.` : "AI review is off on this server (no Anthropic credentials).";
+    $("#maxAi").textContent = S.config.max_ai_bulk;
+    if (S.config.user) $("#who").value = S.config.user;
+    await loadProjects();
+  } catch (err) { $("#findOut").innerHTML = `<div class="card err">Could not reach the server: ${esc(err.message)}</div>`; }
+})();
 </script>
 </body>
 </html>

@@ -31,7 +31,22 @@ pip install -r requirements.txt
 python -m schema_compass.cli serve
 ```
 
-Open http://127.0.0.1:8000. The bundled demo is a fictional retail acquisition. **OrgTRGT** ("lumen", with Databricks and Snowflake products) is migrating ten years of history from **OrgSRC**, a Snowflake warehouse with terse names such as `ORD_HDR.TOT_AMT` and `CUST_MSTR.CRT_DT`. Try these:
+Open http://127.0.0.1:8000. On first run, a **Retail migration demo** project is created. To use your own data, select **New**, upload two metadata files and optionally some reference documents. No configuration files or code changes are needed.
+
+### How a user works with it
+
+1. **Project setup.** Upload the source and target metadata as CSV or Excel exports. Header names are flexible: `table_name`, `column_name`, `description`, `data_type`, and catalog/schema columns are all recognized. You get a data-quality report with tips, for example "only 40% of columns have a description". Then add any S2T sheets, Slack exports or notes.
+2. **Find a source.** Start typing a target table, optionally pick a column, and select **Find source**. The answer is a decision card:
+   - **Use this source**, **Likely source, confirm before using**, **Possible source, needs research**, or **No reliable source found**
+   - a 0–100 confidence score
+   - **Why**, in plain language
+   - **Check before using**: width, conversion, time zone and look-alike warnings
+   - warnings from your documents
+   - **How we found this**: each step the engine took
+3. **Decide.** Approve, reject, or mark as needs research. Behind an SSO proxy or Databricks Apps, the reviewer is taken from the signed-in user. Approved mappings rank first in later searches and can be exported as an S2T sheet from **Decisions**.
+4. **Bulk mapping.** Map every column of a target table, or upload a list of `target_table, target_column` rows. Either way you get a downloadable spreadsheet with the recommendation, confidence, reasons, checks and alternatives for each field.
+
+The bundled demo is a fictional retail acquisition. **OrgTRGT** ("lumen", with Databricks and Snowflake products) is migrating ten years of history from **OrgSRC**, a Snowflake warehouse with terse names such as `ORD_HDR.TOT_AMT` and `CUST_MSTR.CRT_DT`. Try these:
 
 | Search | What it shows |
 | --- | --- |
@@ -40,8 +55,7 @@ Open http://127.0.0.1:8000. The bundled demo is a fictional retail acquisition. 
 | `CUSTOMER_PROFILE` / `SIGNUP_DATE` | `CRT_DT`. The name barely matches, but a prior S2T sheet maps it. |
 | `product_catalog` / `product_name` | `ITEM_DESC` is the match, not `SKU_ID` (an identifier, not a name) and not `ITEM_LONG_DESC` (Slack says it holds marketing copy). |
 | `CUSTOMER_PROFILE` / `MARKETING_OPT_IN` | Flags the `VARCHAR(1)` to `BOOLEAN` conversion and shows the S2T `CASE` rule. |
-| `customer_reviews` | Returns **No confident match**. The knowledge base says this source never existed. |
-| **Map table** on any target | Drafts a full S2T sheet (downloadable CSV) with alternatives, issues and evidence. |
+| `customer_reviews` | **No reliable source found**. The knowledge base says this source never existed. |
 
 ## What goes into a score
 
@@ -66,7 +80,7 @@ Both organizations provide one row per column, using this contract. Table-level 
 
 `PLATFORM, TABLE_PHYSICAL_NAME, TABLE_LOGICAL_NAME, TABLE_DESCRIPTION, COLUMN_PHYSICAL_NAME, COLUMN_LOGICAL_NAME, COLUMN_DESCRIPTION, COLUMN_DATATYPE, COLUMN_LENGTH`
 
-Point [`schema-compass.toml`](schema-compass.toml) at CSV files, a Snowflake export table, or Unity Catalog directly:
+In the web app, upload the files in **Project setup**. For the CLI, point [`schema-compass.toml`](schema-compass.toml) at CSV files, a Snowflake export table, or Unity Catalog directly:
 
 ```toml
 [source]
@@ -91,7 +105,7 @@ Logical names usually live in a data dictionary or governance tags rather than i
 
 ## Knowledge base (RAG)
 
-Add files to the `[knowledge] paths` folders, or upload them on the **Knowledge** tab:
+Upload documents in **Project setup** (or list folders under `[knowledge] paths` for CLI use):
 
 - **S2T sheets** (`.csv` / `.xlsx`). Columns named like `target_table, target_column, source_table, source_column, transformation, notes`; common aliases are accepted.
 - **Slack exports** (`.json`). A channel export, either a message list or `{"channel", "messages"}`. Messages are grouped by thread.
@@ -138,16 +152,30 @@ Weights and thresholds were tuned on this small synthetic fixture, so treat thes
 
 Source tables and columns are vectorized once at startup. A table query scores every source table but deep-scores (column coverage plus evidence) only a shortlist of 15. A column query scores every source column, then reranks the union of the top tables' columns, the global top 25, and anything an S2T sheet names. This handles tens of thousands of columns in a single process. Beyond that, move the dense vectors to Databricks Vector Search or Snowflake Cortex Search and keep this scoring layer as the reranker.
 
+## Deploy
+
+| Option | How |
+| --- | --- |
+| Docker | `docker build -t schema-compass .` then `docker run -p 8000:8000 -v compass-data:/data -e ANTHROPIC_API_KEY=... schema-compass`. Projects persist in the `/data` volume. |
+| Databricks Apps | [`app.yaml`](app.yaml) runs the server on the app port. Databricks handles sign-in, and the user's email is recorded on every decision. Point `--home` at a persistent location (for example, a mounted volume) if projects must survive restarts. |
+| Any VM | `python -m schema_compass.cli serve --host 0.0.0.0 --home /srv/compass` behind your SSO proxy. The proxy should forward `X-Forwarded-Email`. |
+
+Environment variables: `SCHEMA_COMPASS_HOME` (project storage), `ANTHROPIC_API_KEY` (AI review), `SCHEMA_COMPASS_MODEL` / `SCHEMA_COMPASS_EFFORT` (Claude model and effort), `SCHEMA_COMPASS_EMBEDDINGS` (sentence-transformer model). The server has no built-in login. Run it on localhost or behind an identity-aware proxy.
+
 ## API
+
+All matching endpoints are scoped to a project: `/api/projects/{id}/...`
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/match` | `{table, column?, platform?, k, rerank}` returns a ranked result |
-| `POST` | `/api/map-table` | Draft mapping for every column of a target table |
-| `GET` | `/api/map-table.csv?table=` | Same, as a downloadable S2T sheet |
-| `POST` / `GET` | `/api/feedback` | Record or list SME decisions |
-| `GET` | `/api/knowledge?q=` | Search the knowledge base |
-| `POST` | `/api/knowledge/upload` | Add an S2T sheet, Slack export or note |
-| `GET` | `/api/status` | Catalog sizes, knowledge counts, optional features |
+| `GET` / `POST` | `/api/projects` | List or create projects |
+| `POST` | `/api/projects/{id}/metadata/{source\|target}` | Upload a metadata file (CSV/XLSX) and get a quality report |
+| `GET` / `POST` / `DELETE` | `/api/projects/{id}/knowledge` | Search, add or remove reference documents |
+| `GET` | `/api/projects/{id}/suggest?q=&table=` | Typeahead for target tables and columns |
+| `POST` | `/api/projects/{id}/match` | `{table, column?, k, rerank}` returns the decision, advice, trace, candidates and evidence |
+| `POST` | `/api/projects/{id}/map-table` | Draft a mapping for every column of a table (also `GET .../map-table.csv`) |
+| `POST` | `/api/projects/{id}/bulk` | Upload a list of target fields; returns rows and a CSV export link |
+| `POST` / `GET` | `/api/projects/{id}/feedback` | Record or list decisions (also `GET .../approved.csv`) |
+| `GET` | `/healthz`, `/api/config` | Health check; AI and embedding status and the signed-in user |
 
 All organizations, products, people and conversations in `demo/` are fictional.

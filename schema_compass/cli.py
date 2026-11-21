@@ -5,6 +5,7 @@ import argparse
 import csv
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -36,9 +37,13 @@ def main(argv=None):
     parser.add_argument("-v", "--verbose", action="store_true")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    serve = sub.add_parser("serve", help="Run the web UI and API")
-    serve.add_argument("--host", default="127.0.0.1")
-    serve.add_argument("--port", type=int, default=8000)
+    serve = sub.add_parser("serve", help="Run the self-service web UI and API")
+    serve.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
+    serve.add_argument("--port", type=int, default=int(os.environ.get("DATABRICKS_APP_PORT") or os.environ.get("PORT") or 8000))
+    serve.add_argument("--home", default=os.environ.get("SCHEMA_COMPASS_HOME", "workspace"),
+                       help="Folder that stores projects (default ./workspace)")
+    serve.add_argument("--no-demo", action="store_true", help="Do not create the demo project on first run")
+    serve.add_argument("--no-ai", action="store_true", help="Disable Claude review even if credentials exist")
 
     match = sub.add_parser("match", help="Match a target table or table.column")
     match.add_argument("table")
@@ -85,15 +90,31 @@ def main(argv=None):
         print(f"Wrote {len(rows)} column rows to {args.output}")
         return
 
-    settings = load_settings(args.config)
     if args.command == "serve":
         import uvicorn
 
         from .api import create_app
+        from .workspace import Workspace
 
-        uvicorn.run(create_app(settings, build_engine(settings, embedding_model=args.embedding_model)),
-                    host=args.host, port=args.port)
+        workspace = Workspace(args.home)
+        if not args.no_demo:
+            workspace.seed_demo(Path(__file__).resolve().parent.parent / "demo")
+        embedder = reranker = None
+        model = args.embedding_model or os.environ.get("SCHEMA_COMPASS_EMBEDDINGS")
+        if model:
+            from .index import Embedder
+
+            embedder = Embedder(model, cache_dir=workspace.home / "cache")
+        if not args.no_ai:
+            from .rerank import reranker_from_env
+
+            reranker = reranker_from_env(effort=os.environ.get("SCHEMA_COMPASS_EFFORT", "medium"))
+        print(f"Schema Compass: projects in {workspace.home}; AI review "
+              f"{'on (' + reranker.model + ')' if reranker else 'off'}; open http://{args.host}:{args.port}")
+        uvicorn.run(create_app(workspace, embedder=embedder, reranker=reranker), host=args.host, port=args.port)
         return
+
+    settings = load_settings(args.config)
 
     if args.command == "evaluate":
         from .evaluate import evaluate as run_eval
@@ -137,13 +158,9 @@ def main(argv=None):
     if args.command == "map":
         result = engine.map_table(table, rerank=args.rerank)
         if args.output:
-            from fastapi.testclient import TestClient  # reuse the CSV writer in the API
+            from .export import result_row, to_csv
 
-            from .api import create_app
-
-            client = TestClient(create_app(settings, engine))
-            response = client.get("/api/map-table.csv", params=dict(table=table.id))
-            args.output.write_text(response.text, encoding="utf-8")
+            args.output.write_text(to_csv([result_row(c) for c in result["columns"]]), encoding="utf-8")
             print(f"Wrote {len(result['columns'])} rows to {args.output}")
         else:
             _print_result(result["table"])
