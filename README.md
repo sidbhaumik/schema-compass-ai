@@ -1,181 +1,344 @@
 # Schema Compass
 
-Find the right **source table and column** for every field of a **target data product** during a migration, with a confidence score, an explanation, and the evidence behind it.
+**Find the right source table and column for every field of a target data product, with a confidence score, a plain-language recommendation, and the evidence behind it.**
 
-Give it a target table (Snowflake or Databricks), or a table and a column. Schema Compass searches the source organization's metadata semantically, pulls in tribal knowledge from prior source-to-target (S2T) sheets, Slack threads and notes, and recommends the best match. You can also ask Claude to review the shortlist. Analysts approve or reject suggestions, and each decision improves later matches.
+When teams migrate or consolidate data in Snowflake or Databricks, analysts spend days searching the source system for the column that feeds each target field. Names rarely line up (`CRT_DT` vs `signup_date`), and the real answer often sits in an old mapping spreadsheet or a Slack thread. Schema Compass automates that search. You enter a target table and column. It reads the target's definition, searches the source metadata by meaning and keywords, checks your team's documents, and tells you which source to use, how sure it is, and what to verify first.
 
-```mermaid
-flowchart LR
-    S[Source metadata<br/>Snowflake / CSV] --> I[Hybrid index<br/>names · descriptions · embeddings]
-    T[Target metadata<br/>Snowflake + Databricks UC] --> I
-    I --> R[Retrieve<br/>table shortlist + global column search]
-    K[Knowledge base<br/>S2T sheets · Slack · notes] --> E[Evidence]
-    F[SME decisions] --> E
-    R --> SC[Score<br/>similarity · table context · type · role]
-    E --> SC
-    SC --> L{AI review?}
-    L -- optional --> C[Claude reranker<br/>verdict · rationale · load rule]
-    L --> O[Ranked candidates<br/>confidence band · issues · evidence]
-    C --> O
-    O --> UI[Web UI / API / CLI / S2T CSV]
-    UI -- approve / reject --> F
-```
+![Schema Compass recommending a source column with confidence, reasons and checks](docs/find-a-source.jpg)
 
-## Quick start
+- **Self-service web app.** Upload metadata in the browser; you don't write code or edit config files.
+- **Explainable.** Every answer comes with a confidence score, why the source was chosen, what to check before using it, and how it was found.
+- **Uses team knowledge.** It reads earlier source-to-target (S2T) sheets, Slack exports and notes, which confirm or warn against candidates.
+- **Learns from reviewers.** Approved mappings rank first in later searches; rejected ones are suppressed.
+- **Optional AI review.** Claude double-checks the shortlist and suggests a load rule.
+- **Metadata only.** Schema Compass never reads your actual data rows.
 
-Requires Python 3.11 or later.
+## Contents
+
+- [Get started in five minutes](#get-started-in-five-minutes)
+- [Use it on your own migration](#use-it-on-your-own-migration)
+- [Optional features](#optional-features)
+- [Where your data goes](#where-your-data-goes)
+- [Deploy for a team](#deploy-for-a-team)
+- [How matching works](#how-matching-works)
+- [Command line and API](#command-line-and-api)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+
+## Get started in five minutes
+
+### Option A: Python
+
+Requires [Python 3.11 or later](https://www.python.org/downloads/) and Git.
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
+git clone https://github.com/sidbhaumik/schema-compass-ai.git
+cd schema-compass-ai
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python -m schema_compass.cli serve
 ```
 
-Open http://127.0.0.1:8000. On first run, a **Retail migration demo** project is created. To use your own data, select **New**, upload two metadata files and optionally some reference documents. No configuration files or code changes are needed.
+Open **http://127.0.0.1:8000**. Stop the server with `Ctrl+C`.
 
-### How a user works with it
+### Option B: Docker
 
-1. **Project setup.** Upload the source and target metadata as CSV or Excel exports. Header names are flexible: `table_name`, `column_name`, `description`, `data_type`, and catalog/schema columns are all recognized. You get a data-quality report with tips, for example "only 40% of columns have a description". Then add any S2T sheets, Slack exports or notes.
-2. **Find a source.** Start typing a target table, optionally pick a column, and select **Find source**. The answer is a decision card:
-   - **Use this source**, **Likely source, confirm before using**, **Possible source, needs research**, or **No reliable source found**
-   - a 0–100 confidence score
-   - **Why**, in plain language
-   - **Check before using**: width, conversion, time zone and look-alike warnings
-   - warnings from your documents
-   - **How we found this**: each step the engine took
-3. **Decide.** Approve, reject, or mark as needs research. Behind an SSO proxy or Databricks Apps, the reviewer is taken from the signed-in user. Approved mappings rank first in later searches and can be exported as an S2T sheet from **Decisions**.
-4. **Bulk mapping.** Map every column of a target table, or upload a list of `target_table, target_column` rows. Either way you get a downloadable spreadsheet with the recommendation, confidence, reasons, checks and alternatives for each field.
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) or another Docker engine.
 
-The bundled demo is a fictional retail acquisition. **OrgTRGT** ("lumen", with Databricks and Snowflake products) is migrating ten years of history from **OrgSRC**, a Snowflake warehouse with terse names such as `ORD_HDR.TOT_AMT` and `CUST_MSTR.CRT_DT`. Try these:
+```bash
+git clone https://github.com/sidbhaumik/schema-compass-ai.git
+cd schema-compass-ai
+docker build -t schema-compass .
+docker run -d --name schema-compass -p 8000:8000 -v compass-data:/data schema-compass
+```
 
-| Search | What it shows |
+Open **http://localhost:8000**. Projects are stored in the `compass-data` volume and survive restarts. Stop the container with `docker stop schema-compass`.
+
+### Try the demo
+
+On first start the app creates a **Retail migration demo** project. It's a fictional acquisition: the target organization (Databricks and Snowflake tables such as `lumen.sales.orders`) is backfilling ten years of history from a source Snowflake warehouse with terse names such as `ORD_HDR.TOT_AMT`. Click the example chips under the search box, or try these:
+
+| Target table / column | What you'll see |
 | --- | --- |
-| `orders` | `ORD_HDR` wins. The look-alike `ORD_HDR_LGCY` is demoted because a Slack thread calls it deprecated. |
-| `orders` / `customer_id` | `ORD_HDR.CUST_ID`, not `CUST_MSTR.CUST_ID`. The parent table's context breaks the tie between identical column names. |
-| `CUSTOMER_PROFILE` / `SIGNUP_DATE` | `CRT_DT`. The name barely matches, but a prior S2T sheet maps it. |
-| `product_catalog` / `product_name` | `ITEM_DESC` is the match, not `SKU_ID` (an identifier, not a name) and not `ITEM_LONG_DESC` (Slack says it holds marketing copy). |
-| `CUSTOMER_PROFILE` / `MARKETING_OPT_IN` | Flags the `VARCHAR(1)` to `BOOLEAN` conversion and shows the S2T `CASE` rule. |
-| `customer_reviews` | **No reliable source found**. The knowledge base says this source never existed. |
+| `orders` | **Use** `ORD_HDR`. The look-alike `ORD_HDR_LGCY` is demoted because a Slack thread says it's deprecated. |
+| `orders` / `customer_id` | `ORD_HDR.CUST_ID`, not `CUST_MSTR.CUST_ID`. The parent table's context breaks the tie between identical names. |
+| `CUSTOMER_PROFILE` / `SIGNUP_DATE` | `CRT_DT`. The names barely match, but an earlier S2T sheet maps it. |
+| `product_catalog` / `product_name` | `ITEM_DESC`, not `SKU_ID` (an identifier, not a name) and not `ITEM_LONG_DESC` (Slack says it holds marketing copy). |
+| `CUSTOMER_PROFILE` / `MARKETING_OPT_IN` | Use `OPT_IN_FLG`, but first agree how `'Y'`/`'N'` converts to a boolean. |
+| `customer_reviews` | **No reliable source found.** The documents say this data never existed in the source. |
 
-## What goes into a score
+## Use it on your own migration
+
+### 1. Create a project
+
+Select **New** in the top bar and name the project, for example "Warehouse consolidation wave 2". A project holds one source metadata set, one target metadata set, reference documents and reviewer decisions. Create one project per migration or wave.
+
+### 2. Export metadata from each platform
+
+You need two files, one for the **source** (where data comes from) and one for the **target** (the data products you're building). Each has one row per column. You can export straight from the platform's information schema with the queries below, then download the results as CSV from Snowsight or the Databricks SQL editor.
+
+<details>
+<summary><b>Snowflake</b>: replace <code>MY_DB</code></summary>
+
+```sql
+SELECT 'SNOWFLAKE'                                                   AS PLATFORM,
+       c.TABLE_CATALOG || '.' || c.TABLE_SCHEMA || '.' || c.TABLE_NAME AS TABLE_PHYSICAL_NAME,
+       NULL                                                          AS TABLE_LOGICAL_NAME,
+       t.COMMENT                                                     AS TABLE_DESCRIPTION,
+       c.COLUMN_NAME                                                 AS COLUMN_PHYSICAL_NAME,
+       NULL                                                          AS COLUMN_LOGICAL_NAME,
+       c.COMMENT                                                     AS COLUMN_DESCRIPTION,
+       c.DATA_TYPE                                                   AS COLUMN_DATATYPE,
+       c.CHARACTER_MAXIMUM_LENGTH                                    AS COLUMN_LENGTH
+FROM MY_DB.INFORMATION_SCHEMA.COLUMNS c
+JOIN MY_DB.INFORMATION_SCHEMA.TABLES t
+  ON t.TABLE_SCHEMA = c.TABLE_SCHEMA AND t.TABLE_NAME = c.TABLE_NAME
+WHERE c.TABLE_SCHEMA <> 'INFORMATION_SCHEMA'
+ORDER BY 2, c.ORDINAL_POSITION;
+```
+</details>
+
+<details>
+<summary><b>Databricks (Unity Catalog)</b>: replace <code>my_catalog</code></summary>
+
+```sql
+SELECT 'DATABRICKS'                                                    AS PLATFORM,
+       concat_ws('.', c.table_catalog, c.table_schema, c.table_name)   AS TABLE_PHYSICAL_NAME,
+       NULL                                                            AS TABLE_LOGICAL_NAME,
+       t.comment                                                       AS TABLE_DESCRIPTION,
+       c.column_name                                                   AS COLUMN_PHYSICAL_NAME,
+       NULL                                                            AS COLUMN_LOGICAL_NAME,
+       c.comment                                                       AS COLUMN_DESCRIPTION,
+       c.full_data_type                                                AS COLUMN_DATATYPE,
+       c.character_maximum_length                                      AS COLUMN_LENGTH
+FROM my_catalog.information_schema.columns c
+JOIN my_catalog.information_schema.tables t
+  ON t.table_schema = c.table_schema AND t.table_name = c.table_name
+WHERE c.table_schema <> 'information_schema'
+ORDER BY 2, c.ordinal_position;
+```
+</details>
+
+If your target spans both platforms, export each one and combine the rows into one file. The `PLATFORM` column keeps them apart.
+
+**Fill in business names and descriptions where you can.** Information schemas often lack them, but your data dictionary or catalog tags usually have them. They are the strongest matching signals: a column with a good description can be matched even when its name is cryptic.
+
+You don't have to use those exact headers. Common spellings are recognized automatically:
+
+| Field | Required | Recognized headers (examples) |
+| --- | --- | --- |
+| Table name | Yes | `table_name`, `table_physical_name`, `table`; separate `database`/`catalog` and `schema` columns are joined automatically |
+| Column name | Yes | `column_name`, `column_physical_name`, `field_name` |
+| Table business name / description | Recommended | `table_logical_name`, `data_product` · `table_description`, `table_comment` |
+| Column business name | Recommended | `column_logical_name`, `business_name`, `attribute_name`, `business_term` |
+| Column description | Recommended | `column_description`, `description`, `definition`, `comment` |
+| Data type / length | Recommended | `data_type`, `datatype`, `full_data_type` · `length`, `character_maximum_length` |
+| Platform | Optional | `platform` (`SNOWFLAKE` or `DATABRICKS`); otherwise the platform you pick at upload |
+
+For example files, see [`demo/source_metadata.csv`](demo/source_metadata.csv) and [`demo/target_metadata.csv`](demo/target_metadata.csv).
+
+### 3. Upload the metadata
+
+In **Project setup**, drop the source file on card 1 and the target file on card 2 (CSV or Excel, up to 25 MB each). Pick the default platform first if your file has no `PLATFORM` column. Each upload shows a quality report: the number of tables and columns, and what percentage have descriptions, business names and data types. It also gives tips, such as "Only 30% of columns have a description." To update a file later, upload it again. Changes apply immediately.
+
+### 4. Add reference documents (optional, recommended)
+
+Drop files on card 3. They are searched whenever you look up a field, and they can raise or lower a candidate's score.
+
+| Document | Format | What it should contain |
+| --- | --- | --- |
+| Earlier S2T mapping sheets | `.csv`, `.xlsx` | Columns like `target_table, target_column, source_table, source_column`, plus optional `transformation` and `notes`. Common aliases are accepted. |
+| Slack conversations | `.json` | A channel export: a list of messages, or `{"channel": ..., "messages": [...]}`. Replies are grouped by thread. |
+| Notes, data dictionaries, runbooks | `.md`, `.txt` | Any text. It's split by heading. |
+
+Examples are in [`demo/knowledge/`](demo/knowledge). A passage counts as evidence for a candidate only when it names both the target field and the source field. Phrases like "deprecated", "not X" or "don't use" turn it into a warning, and phrases like "nothing to backfill" or "no source" mark a target as having no source.
+
+### 5. Find a source
+
+On **Find a source**, start typing a target table (physical or business name), optionally choose a column, and select **Find source**. Leave the column blank to find the best source *table*. The decision card shows:
+
+| Part of the card | Meaning |
+| --- | --- |
+| **Decision** | **Use this source** (80+, clear lead): confirm quickly and use. **Likely source, confirm before using** (60–79). **Possible source, needs research** (40–59). **No reliable source found** (under 40): probably a new, derived or out-of-scope field. |
+| **Confidence** | 0–100. It combines name, description and meaning similarity, the parent table's fit, data type and field role checks, and evidence from your documents and past decisions. |
+| **Why** | Plain-language reasons, such as "An earlier source-to-target sheet maps it this way." |
+| **Check before using** | Concrete risks: values wider than the target, `'Y'/'N'` to boolean conversions, time zones, close runner-ups, warnings from documents. |
+| **How we found this** | Each step the engine took and what it searched. |
+| **All candidates** | The other options, ranked, with details and evidence. You can approve one of these instead. |
+| **Related team knowledge** | The most relevant passages from your documents. |
+
+### 6. Record the decision
+
+Choose **Approve this mapping**, **Reject**, or **Needs research**, and optionally add a note. Approvals pin the mapping near 100 in later searches, and rejections push it down. The **Decisions** page lists every decision and lets you download approved mappings as an S2T sheet. You can upload that sheet into the next project as a reference document.
+
+### 7. Map many fields at once
+
+On **Bulk mapping**:
+- **Map a whole table**: pick a target table to get a recommendation for every column.
+- **Upload a list of fields**: a CSV or Excel file with `target_table` and optional `target_column` columns (a template link is on the page). A blank column maps every column of that table. The limit is 5,000 columns per upload.
+
+Both produce a table you can review on screen and a **spreadsheet download**. Each row has the recommended source, confidence, decision, reasons, checks, evidence and two alternatives. Select **Open** on any row to see its full decision card.
+
+## Optional features
+
+### AI review with Claude
+
+Claude reads the target definition, the top five candidates and the related document passages. For each candidate it returns a verdict, a confidence score and a one-line rationale, and for the best one a suggested load rule such as `CASE WHEN OPT_IN_FLG = 'Y' THEN TRUE ELSE FALSE END`. Its confidence is blended (60%) with the built-in score. Without it, everything else works the same.
+
+1. Get an API key from the [Claude Console](https://platform.claude.com/).
+2. Start the server with the key set:
+
+   ```bash
+   export ANTHROPIC_API_KEY=sk-ant-...        # Windows PowerShell: $env:ANTHROPIC_API_KEY="sk-ant-..."
+   python -m schema_compass.cli serve
+   # or: docker run ... -e ANTHROPIC_API_KEY=sk-ant-... schema-compass
+   ```
+3. Tick **AI review with Claude** under the search box. In bulk mapping, AI review is limited to 50 fields per upload to keep costs predictable.
+
+The default model is `claude-opus-5-5` at `medium` effort. Override them with `SCHEMA_COMPASS_MODEL` and `SCHEMA_COMPASS_EFFORT`. If the API can't be reached, you get the standard ranking and a note in **How we found this**.
+
+### Meaning-based embeddings
+
+Embeddings add a dense semantic similarity signal on top of keyword matching. They help most when names and descriptions use different vocabulary. The model runs locally and its vectors are cached.
+
+```bash
+pip install -r requirements-semantic.txt
+SCHEMA_COMPASS_EMBEDDINGS=sentence-transformers/all-MiniLM-L6-v2 python -m schema_compass.cli serve
+```
+
+The first start downloads the model, about 90 MB.
+
+## Where your data goes
+
+- **Stays on your server:** uploaded metadata, documents, decisions and exports. They live in the project folder: `./workspace` by default, `/data` in Docker, or wherever `SCHEMA_COMPASS_HOME` or `--home` points. Back up that folder to keep your projects.
+- **Never touched:** actual data rows. Schema Compass works only on metadata.
+- **Sent to Anthropic only when AI review is ticked:** the target field's metadata, the top candidates' metadata, and the related document snippets. Don't enable AI review if your policies don't allow that.
+- **Deleting a project** moves its folder to `workspace/trash/` rather than erasing it.
+
+## Deploy for a team
+
+The server has **no built-in login**. Run it on your own machine, or put it behind something that handles sign-in. If your proxy forwards the signed-in user (`X-Forwarded-Email`), decisions are recorded under that user automatically.
+
+| Option | Steps |
+| --- | --- |
+| **Docker** | Build as in [Option B](#option-b-docker) and run on a server behind your SSO proxy. Mount a persistent volume at `/data`. |
+| **Databricks Apps** | Sync this folder to your workspace (`databricks sync . /Workspace/Users/<you>/schema-compass`), create an app (`databricks apps create schema-compass`), then deploy (`databricks apps deploy schema-compass --source-code-path /Workspace/Users/<you>/schema-compass`). [`app.yaml`](app.yaml) starts the server, Databricks handles sign-in, and each decision records the user's email. App storage is temporary, so set `--home` to a persistent location if projects must survive redeploys. |
+| **Any VM** | `python -m schema_compass.cli serve --host 0.0.0.0 --home /srv/schema-compass`, behind a reverse proxy with SSO. |
+
+| Setting | Flag | Environment variable | Default |
+| --- | --- | --- | --- |
+| Project storage | `--home` | `SCHEMA_COMPASS_HOME` | `./workspace` |
+| Host / port | `--host` / `--port` | `HOST` / `PORT` (or `DATABRICKS_APP_PORT`) | `127.0.0.1` / `8000` |
+| Skip the demo project | `--no-demo` | | demo created on first run |
+| AI review | `--no-ai` to disable | `ANTHROPIC_API_KEY`, `SCHEMA_COMPASS_MODEL`, `SCHEMA_COMPASS_EFFORT` | off without a key |
+| Embeddings | `--embedding-model` (before `serve`) | `SCHEMA_COMPASS_EMBEDDINGS` | off |
+
+## How matching works
+
+```mermaid
+flowchart LR
+    T[Target field<br/>name · business name · description · type · length] --> R
+    S[Source metadata] --> R[Search<br/>keywords · meaning · optional embeddings]
+    R --> SL[Shortlist<br/>best tables' columns + best global matches]
+    K[Team knowledge<br/>S2T sheets · Slack · notes] --> E[Evidence]
+    F[Reviewer decisions] --> E
+    SL --> SC[Score<br/>similarity · table fit · type · role · width]
+    E --> SC
+    SC --> AI{AI review?}
+    AI -- optional --> C[Claude verdicts<br/>rationale · load rule]
+    AI --> D[Decision card<br/>confidence · why · checks]
+    C --> D
+    D -- approve / reject --> F
+```
 
 | Signal | What it captures |
 | --- | --- |
-| Name similarity | Physical and logical names after abbreviation expansion (`CUST_NM` becomes customer name), plural folding and business synonyms. Uses character and word TF-IDF. |
-| Description similarity | Word n-gram TF-IDF over names plus descriptions |
-| Semantic similarity *(optional)* | Sentence-transformer embeddings, cached on disk |
-| Table context | A column inherits the strength of its parent table's match. A table match blends name similarity with **column coverage**: how well the target's columns are covered by the source table's columns. |
-| Datatype compatibility | Same family, castable (with a note such as "decimal to integer may truncate"), or conflicting (capped) |
-| Field role | Identifier vs name vs amount vs date vs flag, so `product_name` does not map to `SKU_ID` |
-| Width | Flags a source `VARCHAR` wider than the target's |
-| Evidence (RAG) | S2T rows (strong), Slack and notes passages that endorse or warn against a candidate, and "no source exists" statements |
-| SME feedback | Approved pairs are pinned near 100. Rejected pairs are suppressed. |
-| Claude review *(optional)* | Claude reads the shortlist and retrieved passages. It returns a verdict, confidence, rationale and load rule for each candidate, and is blended at 60% with the heuristic score. |
+| Name similarity | Physical and business names after expanding abbreviations (`CUST_NM` becomes customer name), folding plurals and adding business synonyms. Character and word TF-IDF. |
+| Description similarity | Word TF-IDF over names plus descriptions. |
+| Semantic similarity *(optional)* | Sentence-transformer embeddings. |
+| Table fit | A column inherits its parent table's match strength. Tables are scored on how well their columns cover the target's columns. Columns from unrelated tables are marked as needing a join. |
+| Data type and width | Same type, castable with a note (such as "decimal to integer may truncate"), or incompatible (score capped). A source text column wider than the target is flagged. |
+| Field role | Identifier, name, amount, date, flag and so on, so `product_name` doesn't map to `SKU_ID`. |
+| Evidence | S2T rows (strong), endorsements and warnings in Slack and notes, and "no source exists" statements. |
+| Reviewer decisions | Approved pairs pinned near 100; rejected pairs suppressed. |
 
-Confidence bands: **high** (80 and up, with a clear lead) means quick SME confirmation. **Medium** (60 to 79) means standard review. **Low** (40 to 59) means research before use. **None** (under 40) means likely a new, derived or out-of-scope field.
+### Measuring quality
 
-## Use your own metadata
+The demo includes 82 hand-labeled answers in [`demo/gold_mappings.csv`](demo/gold_mappings.csv). `python -m schema_compass.cli evaluate` reports top-1 accuracy, recall@3, and whether no-source fields are correctly left unmatched:
 
-Both organizations provide one row per column, using this contract. Table-level fields repeat on each row.
-
-`PLATFORM, TABLE_PHYSICAL_NAME, TABLE_LOGICAL_NAME, TABLE_DESCRIPTION, COLUMN_PHYSICAL_NAME, COLUMN_LOGICAL_NAME, COLUMN_DESCRIPTION, COLUMN_DATATYPE, COLUMN_LENGTH`
-
-In the web app, upload the files in **Project setup**. For the CLI, point [`schema-compass.toml`](schema-compass.toml) at CSV files, a Snowflake export table, or Unity Catalog directly:
-
-```toml
-[source]
-type = "snowflake"
-connection = "my_named_connection"     # from ~/.snowflake/connections.toml
-table = "MIGRATION.META.SOURCE_COLUMNS"
-
-[target]
-type = "databricks"
-profile = "my-profile"                 # Databricks CLI profile
-catalogs = ["lumen"]
-warehouse_id = "abc123"
-```
-
-Install the connector extras with `pip install -r requirements-connectors.txt`. To snapshot Unity Catalog metadata to the CSV contract:
-
-```bash
-python -m schema_compass.cli harvest-databricks --profile my-profile --catalog lumen target.csv
-```
-
-Logical names usually live in a data dictionary or governance tags rather than in `information_schema`. Fill them in when you have them, because they are among the strongest signals.
-
-## Knowledge base (RAG)
-
-Upload documents in **Project setup** (or list folders under `[knowledge] paths` for CLI use):
-
-- **S2T sheets** (`.csv` / `.xlsx`). Columns named like `target_table, target_column, source_table, source_column, transformation, notes`; common aliases are accepted.
-- **Slack exports** (`.json`). A channel export, either a message list or `{"channel", "messages"}`. Messages are grouped by thread.
-- **Notes** (`.md` / `.txt`). Chunked by heading.
-
-Evidence works per pair. A passage counts for a candidate only if it names both the target and the source field, and phrases such as "deprecated", "not X" or "don't use" turn it into a warning. Approved decisions can be exported with `export-approved` as an S2T sheet for the next wave.
-
-## Optional components
-
-```bash
-# Dense embeddings
-pip install -r requirements-semantic.txt
-python -m schema_compass.cli --embedding-model sentence-transformers/all-MiniLM-L6-v2 serve
-
-# Claude review: set ANTHROPIC_API_KEY (or run `ant auth login`), then tick "AI review" in the UI
-python -m schema_compass.cli match product_catalog product_name --rerank
-```
-
-The AI review sends only the target field, the top candidates' metadata and the retrieved snippets. It uses `claude-opus-5-5` by default; change the model and effort in `[llm]`. Server-side refusal fallback is enabled. If the API is unavailable, results fall back to the heuristic ranking.
-
-## CLI
-
-```bash
-python -m schema_compass.cli match orders                     # table-level
-python -m schema_compass.cli match orders order_total_amount  # column-level
-python -m schema_compass.cli map shipments --output s2t_shipments.csv
-python -m schema_compass.cli evaluate                         # vs demo/gold_mappings.csv
-python -m schema_compass.cli evaluate --no-knowledge          # ablation without RAG
-python -m schema_compass.cli export-approved approved_s2t.csv
-```
-
-## Measuring quality
-
-`evaluate` reports top-1 accuracy, recall@k, and abstention accuracy (whether no-source targets are correctly left unmatched) at both the table and column level. On the 82 hand-labeled demo pairs:
-
-| | Table top-1 | Column top-1 | Column recall@3 | Abstention (column) |
+| | Table top-1 | Column top-1 | Column recall@3 | No-source fields left unmatched |
 | --- | ---: | ---: | ---: | ---: |
-| Metadata only | 9/9 | 66/66 | 66/66 | 5/6 |
-| Metadata + knowledge base | 9/9 | 66/66 | 66/66 | 6/6 |
+| Metadata only (`--no-knowledge`) | 9/9 | 66/66 | 66/66 | 5/6 |
+| Metadata + documents | 9/9 | 66/66 | 66/66 | 6/6 |
 
-Weights and thresholds were tuned on this small synthetic fixture, so treat these numbers as a regression floor, not a benchmark. Before relying on bands for a real program, label 50 to 100 pairs from your own domain, including look-alike negatives and fields with no source. Then run `evaluate --gold your_labels.csv` and adjust `Weights` in [`engine.py`](schema_compass/engine.py).
+The scoring weights were tuned on this small synthetic set, so treat these results as a regression check, not a benchmark. Before relying on the confidence bands for a real program:
+1. Label 50 to 100 fields from your own migration, including look-alikes and fields with no source.
+2. Run `evaluate --gold your_labels.csv`.
+3. Adjust `Weights` in [`engine.py`](schema_compass/engine.py) if needed.
 
-## Scaling notes
+Source metadata is indexed once per project, so a single server handles tens of thousands of columns. For much larger catalogs, move the vectors to Databricks Vector Search or Snowflake Cortex Search and keep this scoring layer as the reranker.
 
-Source tables and columns are vectorized once at startup. A table query scores every source table but deep-scores (column coverage plus evidence) only a shortlist of 15. A column query scores every source column, then reranks the union of the top tables' columns, the global top 25, and anything an S2T sheet names. This handles tens of thousands of columns in a single process. Beyond that, move the dense vectors to Databricks Vector Search or Snowflake Cortex Search and keep this scoring layer as the reranker.
+## Command line and API
 
-## Deploy
+The CLI reads [`schema-compass.toml`](schema-compass.toml), which points at the demo by default. Edit it to use CSV files, a Snowflake export table (`type = "snowflake"`, `connection`, `table`) or Unity Catalog (`type = "databricks"`, `profile`, `catalogs`, `warehouse_id`). Install the connector extras first with `pip install -r requirements-connectors.txt`.
 
-| Option | How |
-| --- | --- |
-| Docker | `docker build -t schema-compass .` then `docker run -p 8000:8000 -v compass-data:/data -e ANTHROPIC_API_KEY=... schema-compass`. Projects persist in the `/data` volume. |
-| Databricks Apps | [`app.yaml`](app.yaml) runs the server on the app port. Databricks handles sign-in, and the user's email is recorded on every decision. Point `--home` at a persistent location (for example, a mounted volume) if projects must survive restarts. |
-| Any VM | `python -m schema_compass.cli serve --host 0.0.0.0 --home /srv/compass` behind your SSO proxy. The proxy should forward `X-Forwarded-Email`. |
+```bash
+python -m schema_compass.cli match orders                     # best source table
+python -m schema_compass.cli match orders order_total_amount  # best source column
+python -m schema_compass.cli map shipments --output s2t.csv   # draft S2T sheet for a table
+python -m schema_compass.cli evaluate                         # score against gold labels
+python -m schema_compass.cli harvest-databricks --profile my-profile --catalog my_catalog target.csv
+```
 
-Environment variables: `SCHEMA_COMPASS_HOME` (project storage), `ANTHROPIC_API_KEY` (AI review), `SCHEMA_COMPASS_MODEL` / `SCHEMA_COMPASS_EFFORT` (Claude model and effort), `SCHEMA_COMPASS_EMBEDDINGS` (sentence-transformer model). The server has no built-in login. Run it on localhost or behind an identity-aware proxy.
+Add `--rerank` to `match` or `map` for AI review.
 
-## API
-
-All matching endpoints are scoped to a project: `/api/projects/{id}/...`
+The web app's REST API is scoped to projects. Interactive docs are at **http://127.0.0.1:8000/docs** while the server runs.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` / `POST` | `/api/projects` | List or create projects |
-| `POST` | `/api/projects/{id}/metadata/{source\|target}` | Upload a metadata file (CSV/XLSX) and get a quality report |
+| `POST` | `/api/projects/{id}/metadata/{source\|target}` | Upload metadata (multipart `file`, optional `platform`) and get a quality report |
 | `GET` / `POST` / `DELETE` | `/api/projects/{id}/knowledge` | Search, add or remove reference documents |
 | `GET` | `/api/projects/{id}/suggest?q=&table=` | Typeahead for target tables and columns |
-| `POST` | `/api/projects/{id}/match` | `{table, column?, k, rerank}` returns the decision, advice, trace, candidates and evidence |
-| `POST` | `/api/projects/{id}/map-table` | Draft a mapping for every column of a table (also `GET .../map-table.csv`) |
-| `POST` | `/api/projects/{id}/bulk` | Upload a list of target fields; returns rows and a CSV export link |
+| `POST` | `/api/projects/{id}/match` | `{"table": ..., "column": ..., "rerank": false}` returns the decision, advice, trace, candidates and evidence |
+| `POST` | `/api/projects/{id}/map-table` | Map every column of a table (also `GET .../map-table.csv?table=`) |
+| `POST` | `/api/projects/{id}/bulk` | Upload a list of target fields; returns rows and an export link |
 | `POST` / `GET` | `/api/projects/{id}/feedback` | Record or list decisions (also `GET .../approved.csv`) |
-| `GET` | `/healthz`, `/api/config` | Health check; AI and embedding status and the signed-in user |
+| `GET` | `/healthz`, `/api/config` | Health check; AI review and embedding status and the signed-in user |
 
-All organizations, products, people and conversations in `demo/` are fictional.
+## Troubleshooting
+
+| Problem | Fix |
+| --- | --- |
+| `python` not found, or a syntax error on start | Check that `python --version` shows 3.11 or later. On macOS and Linux you may need `python3`. |
+| `Address already in use` | Another app is using port 8000. Run `serve --port 8001`, or `docker run -p 8001:8000 ...`. |
+| "Upload both source and target metadata to start matching" | Finish cards 1 and 2 in **Project setup**. |
+| "Could not find a column for TABLE_PHYSICAL_NAME" | The file needs a table name column and a column name column. Rename the headers to `table_name` and `column_name`, or see the recognized headers above. |
+| A document upload says "No usable content found" | S2T sheets need target/source table and column headers, and Slack exports need a `text` field per message. |
+| The **AI review** box is greyed out | The server didn't find `ANTHROPIC_API_KEY` when it started. Set the variable, then restart. |
+| Everything scores low | The metadata probably lacks descriptions and business names. Check the quality report and enrich the files. |
+| The demo project is missing | It's only created when the workspace is empty. Start with a new `--home` folder to see it again. |
+
+## Development
+
+```bash
+pip install -r requirements.txt
+python -m unittest discover -s tests -v
+```
+
+| Path | Purpose |
+| --- | --- |
+| `schema_compass/engine.py` | Retrieval, scoring, evidence and bands |
+| `schema_compass/advisor.py` | Plain-language decision, reasons and checks |
+| `schema_compass/knowledge.py` | Document ingestion, retrieval and evidence extraction |
+| `schema_compass/workspace.py` | Projects, flexible metadata import and quality reports |
+| `schema_compass/rerank.py` | Optional Claude review |
+| `schema_compass/api.py`, `static/index.html` | REST API and web app |
+| `demo/` | Fictional demo metadata, documents and gold labels |
+
+GitHub Actions runs the tests on every push.
+
+## License
+
+[MIT](LICENSE). All organizations, products, people and conversations in `demo/` are fictional.

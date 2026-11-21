@@ -1,6 +1,10 @@
-# Databricks Apps entry point. Deploy with: databricks apps deploy <app-name> --source-code-path <workspace path>
-# The platform signs users in and forwards their identity, which Schema Compass records on each decision.
+# Databricks Apps entry point.
+# Deploy: databricks apps deploy <app-name> --source-code-path /Workspace/Users/<you>/schema-compass
+# Databricks signs users in and forwards their identity; Schema Compass records it on each decision.
+# App storage is temporary: point --home at persistent storage if projects must survive redeploys.
 command: ["python", "-m", "schema_compass.cli", "serve", "--host", "0.0.0.0", "--home", "/tmp/schema-compass"]
-env:
-  - name: ANTHROPIC_API_KEY
-    valueFrom: anthropic-api-key   # optional secret resource; remove to run without AI review
+
+# Optional AI review: add a secret resource to the app (key "anthropic-api-key"), then uncomment:
+# env:
+#   - name: ANTHROPIC_API_KEY
+#     valueFrom: anthropic-api-key
