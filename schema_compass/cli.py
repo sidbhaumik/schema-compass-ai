@@ -96,7 +96,16 @@ def main(argv=None):
         from .api import create_app
         from .workspace import Workspace
 
-        workspace = Workspace(args.home)
+        sync = None
+        volume = os.environ.get("SCHEMA_COMPASS_VOLUME")
+        if volume:
+            from .storage import VolumeMirror
+
+            mirror = VolumeMirror(volume, args.home)
+            restored = mirror.restore()
+            print(f"Schema Compass: restored {restored} files from {mirror.remote}")
+            sync = lambda path, deleted=False: mirror.remove(path) if deleted else mirror.push(path)
+        workspace = Workspace(args.home, sync=sync)
         if not args.no_demo:
             workspace.seed_demo(Path(__file__).resolve().parent.parent / "demo")
         embedder = reranker = None

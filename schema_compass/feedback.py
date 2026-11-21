@@ -29,8 +29,9 @@ WHERE d.id = (SELECT max(e.id) FROM decisions e
 
 
 class FeedbackStore:
-    def __init__(self, path: str | Path):
+    def __init__(self, path: str | Path, on_write=None):
         self.path = Path(path)
+        self.on_write = on_write
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with closing(self._connect()) as db, db:
             db.executescript(SCHEMA)
@@ -55,7 +56,10 @@ class FeedbackStore:
                 (target_table, target_column or "", source_table, source_column or "", decision,
                  confidence, reviewer.strip(), note.strip()))
             self._cache = None
-            return cursor.lastrowid
+            review_id = cursor.lastrowid
+        if self.on_write:
+            self.on_write(self.path)
+        return review_id
 
     def latest(self) -> list[dict]:
         if self._cache is None:

@@ -174,7 +174,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
     </tbody></table>
     <p class="small muted">Tip: export straight from <code>INFORMATION_SCHEMA.COLUMNS</code> in Snowflake or Databricks, then add business names and descriptions from your data dictionary. Descriptions improve matching the most.</p>
   </details>
-  <div class="card"><h2>Danger zone</h2><div class="row"><span class="muted small">Moves this project to the workspace trash folder.</span><span class="spacer"></span><button class="sm" id="deleteProject">Delete project</button></div></div>
+  <div class="card"><h2>Danger zone</h2><div class="row"><span class="muted small">Hides this project. Its files are kept and an administrator can restore it.</span><span class="spacer"></span><button class="sm" id="deleteProject">Delete project</button></div></div>
 </section>
 </main>
 
@@ -255,7 +255,7 @@ $("#projectDlg").addEventListener("close", async () => {
     location.hash = "#setup"; await loadProjects(p.id); toast("Project created. Upload metadata to begin."); } catch (e) { toast(e.message); }
 });
 $("#deleteProject").addEventListener("click", async () => {
-  if (!S.pid || !confirm(`Delete project "${S.project.name}"? It is moved to the workspace trash folder.`)) return;
+  if (!S.pid || !confirm(`Delete project "${S.project.name}"? It is hidden; its files are kept.`)) return;
   await api(P(""), { method: "DELETE" }); store.set("project", ""); await loadProjects(); toast("Project deleted.");
 });
 

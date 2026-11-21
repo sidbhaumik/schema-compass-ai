@@ -214,7 +214,7 @@ The first start downloads the model, about 90 MB.
 - **Stays on your server:** uploaded metadata, documents, decisions and exports. They live in the project folder: `./workspace` by default, `/data` in Docker, or wherever `SCHEMA_COMPASS_HOME` or `--home` points. Back up that folder to keep your projects.
 - **Never touched:** actual data rows. Schema Compass works only on metadata.
 - **Sent to Anthropic only when AI review is ticked:** the target field's metadata, the top candidates' metadata, and the related document snippets. Don't enable AI review if your policies don't allow that.
-- **Deleting a project** moves its folder to `workspace/trash/` rather than erasing it.
+- **Deleting a project** only hides it. Its files stay in place, and removing `deleted_at` from its `project.json` restores it.
 
 ## Deploy for a team
 
@@ -223,12 +223,38 @@ The server has **no built-in login**. Run it on your own machine, or put it behi
 | Option | Steps |
 | --- | --- |
 | **Docker** | Build as in [Option B](#option-b-docker) and run on a server behind your SSO proxy. Mount a persistent volume at `/data`. |
-| **Databricks Apps** | Sync this folder to your workspace (`databricks sync . /Workspace/Users/<you>/schema-compass`), create an app (`databricks apps create schema-compass`), then deploy (`databricks apps deploy schema-compass --source-code-path /Workspace/Users/<you>/schema-compass`). [`app.yaml`](app.yaml) starts the server, Databricks handles sign-in, and each decision records the user's email. App storage is temporary, so set `--home` to a persistent location if projects must survive redeploys. |
+| **Databricks Apps** | See [Deploy on Databricks Apps](#deploy-on-databricks-apps) below. Databricks handles sign-in, each decision records the user's email, and projects persist on a Unity Catalog volume. |
 | **Any VM** | `python -m schema_compass.cli serve --host 0.0.0.0 --home /srv/schema-compass`, behind a reverse proxy with SSO. |
+
+### Deploy on Databricks Apps
+
+Requires Databricks CLI v1.0 or later, signed in with `databricks auth login --profile <profile>`. Add `--profile <profile>` to each command below.
+
+1. **Create storage for projects.** App disks are wiped on every restart, so projects live on a Unity Catalog volume.
+   ```bash
+   databricks schemas create schema_compass <catalog>
+   databricks volumes create <catalog> schema_compass app_data MANAGED
+   ```
+2. **Create the app** with read and write access to that volume. The resource key `data-volume` is what [`app.yaml`](app.yaml) expects. Run it on one instance, because the app keeps a local working copy of the volume.
+   ```bash
+   databricks apps create --json '{"name": "schema-compass", "compute_min_instances": 1, "compute_max_instances": 1,
+     "resources": [{"name": "data-volume", "uc_securable": {"securable_full_name": "<catalog>.schema_compass.app_data",
+     "securable_type": "VOLUME", "permission": "WRITE_VOLUME"}}]}'
+   ```
+3. **Upload the app files and deploy.** Only `schema_compass/`, `demo/`, `app.yaml` and `requirements.txt` are needed.
+   ```bash
+   mkdir -p /tmp/sc-app && cp -R schema_compass demo app.yaml requirements.txt /tmp/sc-app/
+   databricks workspace import-dir /tmp/sc-app /Workspace/Users/<you>/schema-compass --overwrite
+   databricks apps deploy schema-compass --source-code-path /Workspace/Users/<you>/schema-compass
+   ```
+4. **Open the app URL** shown by `databricks apps get schema-compass`, and grant your team **Can use** on the app. To update later, repeat step 3.
+
+To enable AI review, add a secret resource with the key `anthropic-api-key` holding your Anthropic key, uncomment the two lines at the end of `app.yaml`, and redeploy. Check startup with `databricks apps logs schema-compass`. The log line `restored N files from /Volumes/...` confirms that storage is connected.
 
 | Setting | Flag | Environment variable | Default |
 | --- | --- | --- | --- |
 | Project storage | `--home` | `SCHEMA_COMPASS_HOME` | `./workspace` |
+| Durable storage on a UC volume | | `SCHEMA_COMPASS_VOLUME` (`/Volumes/<catalog>/<schema>/<volume>`) | off |
 | Host / port | `--host` / `--port` | `HOST` / `PORT` (or `DATABRICKS_APP_PORT`) | `127.0.0.1` / `8000` |
 | Skip the demo project | `--no-demo` | | demo created on first run |
 | AI review | `--no-ai` to disable | `ANTHROPIC_API_KEY`, `SCHEMA_COMPASS_MODEL`, `SCHEMA_COMPASS_EFFORT` | off without a key |

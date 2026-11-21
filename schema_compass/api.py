@@ -258,6 +258,7 @@ def create_app(workspace: Workspace, *, embedder=None, reranker=None) -> FastAPI
         exports = p.root / "exports"
         exports.mkdir(exist_ok=True)
         (exports / f"bulk-{stamp}.csv").write_text(to_csv(rows), encoding="utf-8")
+        workspace.sync(exports / f"bulk-{stamp}.csv")
         counts: dict[str, int] = {}
         for row in rows:
             counts[row["decision"]] = counts.get(row["decision"], 0) + 1

@@ -1,10 +1,13 @@
 # Databricks Apps entry point.
-# Deploy: databricks apps deploy <app-name> --source-code-path /Workspace/Users/<you>/schema-compass
 # Databricks signs users in and forwards their identity; Schema Compass records it on each decision.
-# App storage is temporary: point --home at persistent storage if projects must survive redeploys.
+# Projects are kept on a Unity Catalog volume (app resource key "data-volume", Can read and write),
+# so they survive restarts and redeploys. The local folder is only a working copy.
 command: ["python", "-m", "schema_compass.cli", "serve", "--host", "0.0.0.0", "--home", "/tmp/schema-compass"]
 
+env:
+  - name: SCHEMA_COMPASS_VOLUME
+    valueFrom: data-volume
+
 # Optional AI review: add a secret resource to the app (key "anthropic-api-key"), then uncomment:
-# env:
-#   - name: ANTHROPIC_API_KEY
-#     valueFrom: anthropic-api-key
+#  - name: ANTHROPIC_API_KEY
+#    valueFrom: anthropic-api-key

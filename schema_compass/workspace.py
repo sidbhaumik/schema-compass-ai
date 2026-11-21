@@ -17,7 +17,6 @@ import json
 import re
 import shutil
 import threading
-import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -130,9 +129,14 @@ def normalize_metadata(rows: list[dict], default_platform: str = "SNOWFLAKE") ->
     return out, report
 
 
+def _noop(path: Path, deleted: bool = False):
+    pass
+
+
 class Project:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, sync=_noop):
         self.root = root
+        self.sync = sync
         self.meta = json.loads((root / "project.json").read_text(encoding="utf-8"))
         self._engine: MatchEngine | None = None
         self._lock = threading.Lock()
@@ -152,6 +156,7 @@ class Project:
 
     def save_meta(self):
         (self.root / "project.json").write_text(json.dumps(self.meta, indent=2), encoding="utf-8")
+        self.sync(self.root / "project.json")
 
     def summary(self) -> dict:
         info = dict(self.meta)
@@ -170,6 +175,7 @@ class Project:
             writer = csv.DictWriter(handle, fieldnames=FIELDS)
             writer.writeheader()
             writer.writerows(rows)
+        self.sync(self.path(side))
         report.update(file=Path(filename).name, uploaded_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
         self.meta[f"{side}_report"] = report
         self.save_meta()
@@ -193,6 +199,7 @@ class Project:
         if chunks == 0:
             target.unlink(missing_ok=True)
             raise ValueError(f"No usable content found in {safe}. S2T sheets need target/source table and column headers.")
+        self.sync(target)
         self.invalidate()
         return dict(file=safe, passages=chunks, mappings=len(probe.mappings))
 
@@ -201,6 +208,7 @@ class Project:
         if not target.is_file():
             raise ValueError("Document not found.")
         target.unlink()
+        self.sync(target, deleted=True)
         self.invalidate()
 
     def invalidate(self):
@@ -217,25 +225,29 @@ class Project:
                     knowledge.add_path(self.knowledge_dir)
                 self._engine = MatchEngine(
                     Catalog.from_csv(self.path("source"), "source"), Catalog.from_csv(self.path("target"), "target"),
-                    knowledge=knowledge, feedback=FeedbackStore(self.root / "feedback.db"),
+                    knowledge=knowledge,
+                    feedback=FeedbackStore(self.root / "feedback.db", on_write=self.sync),
                     embedder=embedder, reranker=reranker)
             return self._engine
 
 
 class Workspace:
-    def __init__(self, home: str | Path):
+    def __init__(self, home: str | Path, sync=None):
+        """``sync(path, deleted=False)`` is called after every file change (e.g. a VolumeMirror)."""
         self.home = Path(home).expanduser().resolve()
         (self.home / "projects").mkdir(parents=True, exist_ok=True)
         self._projects: dict[str, Project] = {}
         self._lock = threading.Lock()
+        self.sync = sync or _noop
 
     def projects(self) -> list[Project]:
         found = []
         for meta in sorted((self.home / "projects").glob("*/project.json")):
             pid = meta.parent.name
             if pid not in self._projects:
-                self._projects[pid] = Project(meta.parent)
-            found.append(self._projects[pid])
+                self._projects[pid] = Project(meta.parent, self.sync)
+            if not self._projects[pid].meta.get("deleted_at"):
+                found.append(self._projects[pid])
         return sorted(found, key=lambda p: p.meta.get("created_at", ""))
 
     def get(self, pid: str) -> Project:
@@ -245,7 +257,9 @@ class Workspace:
             root = self.home / "projects" / pid
             if not (root / "project.json").exists():
                 raise KeyError(pid)
-            self._projects[pid] = Project(root)
+            self._projects[pid] = Project(root, self.sync)
+        if self._projects[pid].meta.get("deleted_at"):
+            raise KeyError(pid)
         return self._projects[pid]
 
     def create(self, name: str, description: str = "") -> Project:
@@ -259,15 +273,16 @@ class Workspace:
         meta = dict(id=pid, name=name, description=description.strip(),
                     created_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
         (root / "project.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+        self.sync(root / "project.json")
         return self.get(pid)
 
     def delete(self, pid: str):
+        """Hide a project. Files are kept (and can be restored by removing ``deleted_at``)."""
         project = self.get(pid)
         with self._lock:
-            self._projects.pop(pid, None)
-            trash = self.home / "trash"
-            trash.mkdir(exist_ok=True)
-            shutil.move(str(project.root), str(trash / f"{pid}-{int(time.time())}"))
+            project.meta["deleted_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            project.save_meta()
+            project.invalidate()
 
     def seed_demo(self, demo_dir: Path) -> Project | None:
         """Create the bundled retail demo project on first run."""
@@ -282,6 +297,6 @@ class Workspace:
             project.meta[f"{side}_report"] = report
         for doc in (demo_dir / "knowledge").glob("*"):
             shutil.copy(doc, project.knowledge_dir / doc.name)
-        project.meta["gold"] = str((demo_dir / "gold_mappings.csv").resolve())
         project.save_meta()
+        self.sync(project.root)
         return project
