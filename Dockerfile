@@ -1,5 +1,8 @@
 FROM python:3.12-slim
 
+LABEL org.opencontainers.image.source=https://github.com/sidbhaumik/schema-compass-ai \
+      org.opencontainers.image.licenses=MIT
+
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     SCHEMA_COMPASS_HOME=/data HOST=0.0.0.0 PORT=8000
 

@@ -44,16 +44,15 @@ Open **http://127.0.0.1:8000**. Stop the server with `Ctrl+C`.
 
 ### Option B: Docker
 
-Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) or another Docker engine.
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) or another Docker engine. You don't need to clone anything: the prebuilt image runs on Intel/AMD and Apple Silicon.
 
 ```bash
-git clone https://github.com/sidbhaumik/schema-compass-ai.git
-cd schema-compass-ai
-docker build -t schema-compass .
-docker run -d --name schema-compass -p 8000:8000 -v compass-data:/data schema-compass
+docker run -d --name schema-compass -p 8000:8000 -v compass-data:/data ghcr.io/sidbhaumik/schema-compass-ai:1.0.0
 ```
 
-Open **http://localhost:8000**. Projects are stored in the `compass-data` volume and survive restarts. Stop the container with `docker stop schema-compass`.
+Open **http://localhost:8000**. Projects are stored in the `compass-data` volume and survive restarts and upgrades. Stop the container with `docker stop schema-compass`. To enable AI review, add `-e ANTHROPIC_API_KEY=sk-ant-...`. To upgrade, remove the container and run the same command with the new version, keeping the volume.
+
+To build the image from source instead, clone the repo and run `docker build -t schema-compass .`.
 
 ### Try the demo
 
@@ -222,7 +221,7 @@ The server has **no built-in login**. Run it on your own machine, or put it behi
 
 | Option | Steps |
 | --- | --- |
-| **Docker** | Build as in [Option B](#option-b-docker) and run on a server behind your SSO proxy. Mount a persistent volume at `/data`. |
+| **Docker** | Run `ghcr.io/sidbhaumik/schema-compass-ai:<version>` as in [Option B](#option-b-docker) on a server behind your SSO proxy. Mount a persistent volume at `/data`. |
 | **Databricks Apps** | See [Deploy on Databricks Apps](#deploy-on-databricks-apps) below. Databricks handles sign-in, each decision records the user's email, and projects persist on a Unity Catalog volume. |
 | **Any VM** | `python -m schema_compass.cli serve --host 0.0.0.0 --home /srv/schema-compass`, behind a reverse proxy with SSO. |
 
@@ -363,7 +362,7 @@ python -m unittest discover -s tests -v
 | `schema_compass/api.py`, `static/index.html` | REST API and web app |
 | `demo/` | Fictional demo metadata, documents and gold labels |
 
-GitHub Actions runs the tests on every push.
+GitHub Actions runs the tests on every push. Publishing a GitHub release builds the Docker image for `linux/amd64` and `linux/arm64` and pushes it to the GitHub Container Registry. See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## License
 

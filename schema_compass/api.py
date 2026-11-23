@@ -9,6 +9,7 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 
+from . import __version__
 from .export import bulk_requests, result_row, to_csv
 from .workspace import Project, Workspace, read_table_file
 
@@ -60,7 +61,7 @@ async def read_upload(file: UploadFile) -> bytes:
 
 
 def create_app(workspace: Workspace, *, embedder=None, reranker=None) -> FastAPI:
-    app = FastAPI(title="Schema Compass", version="2.1")
+    app = FastAPI(title="Schema Compass", version=__version__)
 
     def project(pid: str) -> Project:
         try:
@@ -97,11 +98,11 @@ def create_app(workspace: Workspace, *, embedder=None, reranker=None) -> FastAPI
 
     @app.get("/healthz")
     def health():
-        return dict(status="ok", projects=len(workspace.projects()))
+        return dict(status="ok", version=__version__, projects=len(workspace.projects()))
 
     @app.get("/api/config")
     def config(request: Request):
-        return dict(user=current_user(request), ai_review=getattr(reranker, "model", None),
+        return dict(version=__version__, user=current_user(request), ai_review=getattr(reranker, "model", None),
                     embeddings=getattr(embedder, "model_name", None), max_ai_bulk=MAX_AI_BULK)
 
     # -------------------------------------------------------------- projects

@@ -1,6 +1,6 @@
 [project]
 name = "schema-compass"
-version = "2.0.0"
+version = "1.0.0"
 description = "Semantic source-to-target matching for data migrations across Snowflake and Databricks"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
