@@ -29,18 +29,37 @@ When teams migrate or consolidate data in Snowflake or Databricks, analysts spen
 
 ### Option A: Python
 
-Requires [Python 3.11 or later](https://www.python.org/downloads/) and Git.
+Requires Python 3.11 or later and Git. Check your Python version first:
+
+```bash
+python3 --version        # Windows: py --version
+```
+
+If it shows a version below 3.11, install a newer one first. On macOS, Apple's built-in Python is 3.9, so run `brew install python@3.12` or use the installer from [python.org](https://www.python.org/downloads/). Then open a new terminal.
+
+macOS and Linux:
 
 ```bash
 git clone https://github.com/sidbhaumik/schema-compass-ai.git
 cd schema-compass-ai
-python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 python -m schema_compass.cli serve
 ```
 
-Open **http://127.0.0.1:8000**. Stop the server with `Ctrl+C`.
+Windows (PowerShell):
+
+```powershell
+git clone https://github.com/sidbhaumik/schema-compass-ai.git
+cd schema-compass-ai
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m schema_compass.cli serve
+```
+
+Once the virtual environment is active (your prompt shows `(.venv)`), `python` and `pip` refer to its Python, so the last two commands work on every platform. Open **http://127.0.0.1:8000**. Stop the server with `Ctrl+C`. Next time, run `cd schema-compass-ai`, then activate the environment and start the server again (the first two commands after `git clone` aren't needed).
 
 ### Option B: Docker
 
@@ -336,7 +355,8 @@ The web app's REST API is scoped to projects. Interactive docs are at **http://1
 
 | Problem | Fix |
 | --- | --- |
-| `python` not found, or a syntax error on start | Check that `python --version` shows 3.11 or later. On macOS and Linux you may need `python3`. |
+| `zsh: command not found: python` | macOS and Linux ship `python3`, not `python`. Create the environment with `python3 -m venv .venv`. After `source .venv/bin/activate`, `python` works. |
+| `Schema Compass needs Python 3.11 or later`, or errors mentioning `tomllib` or `X \| None` | The environment was created with an older Python, such as Apple's 3.9. Install 3.11 or later, delete the `.venv` folder, and create it again with the new Python. |
 | `Address already in use` | Another app is using port 8000. Run `serve --port 8001`, or `docker run -p 8001:8000 ...`. |
 | "Upload both source and target metadata to start matching" | Finish cards 1 and 2 in **Project setup**. |
 | "Could not find a column for TABLE_PHYSICAL_NAME" | The file needs a table name column and a column name column. Rename the headers to `table_name` and `column_name`, or see the recognized headers above. |
