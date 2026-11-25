@@ -1,0 +1,51 @@
+{
+  "id": "people-analytics",
+  "name": "People analytics (HR)",
+  "order": 4,
+  "tagline": "An HRIS export delivered as Excel with its own headers, mapped to a Databricks people-analytics model.",
+  "scenario": "An HR analytics team is moving workforce reporting to Databricks. The HRIS team delivered the source metadata as an Excel workbook with their own column headers (Table Name, Field Name, Definition, Data Type).",
+  "source": "Snowflake HRIS (5 tables), delivered as source_metadata.xlsx",
+  "target": "Databricks: people.analytics, people.recruiting (5 tables)",
+  "features": [
+    "Excel metadata with non-standard headers",
+    "close look-alikes (original vs last hire date, legal vs preferred name)",
+    "unit conversion (percent to fraction)",
+    "derived and no-source fields"
+  ],
+  "source_file": "source_metadata.xlsx",
+  "target_file": "target_metadata.csv",
+  "source_platform": "SNOWFLAKE",
+  "target_platform": "DATABRICKS",
+  "examples": [
+    {
+      "table": "people.analytics.employees",
+      "column": "hire_date",
+      "what": "LAST_HIRE_DT beats ORIG_HIRE_DT because of a Slack decision."
+    },
+    {
+      "table": "people.analytics.employees",
+      "column": "first_name",
+      "what": "PREF_FIRST_NM, not LEGAL_FIRST_NM."
+    },
+    {
+      "table": "people.analytics.employees",
+      "column": "fte",
+      "what": "FTE_PCT with a percent-to-fraction rule."
+    },
+    {
+      "table": "people.analytics.job_profiles",
+      "column": "overtime_eligible",
+      "what": "Derived from FLSA_STAT, explained in the glossary."
+    },
+    {
+      "table": "people.analytics.employees",
+      "column": "manager_id",
+      "what": "MGR_WORKER_ID through abbreviation expansion."
+    },
+    {
+      "table": "people.analytics.employees",
+      "column": "engagement_score",
+      "what": "No source: surveys never fed the HRIS."
+    }
+  ]
+}

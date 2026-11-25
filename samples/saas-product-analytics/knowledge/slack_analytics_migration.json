@@ -1,0 +1,43 @@
+{
+  "channel": "analytics-migration",
+  "messages": [
+    {
+      "ts": "1761000000.000100",
+      "user_name": "maya",
+      "text": "Which events table should feed insight.product.events: trackEvents or trackEvents_v1?"
+    },
+    {
+      "ts": "1761000300.000200",
+      "user_name": "omar",
+      "text": "Use trackEvents. trackEvents_v1 is deprecated and frozen since the 2024 tracker rebuild; do not use it except for a one-off backfill of pre-2024 history.",
+      "thread_ts": "1761000000.000100"
+    },
+    {
+      "ts": "1761000600.000300",
+      "user_name": "omar",
+      "text": "Careful: evtTs in trackEvents_v1 is Pacific time, while trackEvents is UTC.",
+      "thread_ts": "1761000000.000100"
+    },
+    {
+      "ts": "1761259200.000100",
+      "user_name": "li",
+      "text": "For tickets, satisfaction_score should come from csatScore. It is 1-5 in the help desk; keep the same scale."
+    },
+    {
+      "ts": "1761518400.000100",
+      "user_name": "maya",
+      "text": "Where do NPS survey answers live? The nps_responses table needs a source."
+    },
+    {
+      "ts": "1761518700.000200",
+      "user_name": "omar",
+      "text": "NPS was collected in an external survey tool that we never synced, so there is no source for nps_responses in the warehouse. It starts fresh.",
+      "thread_ts": "1761518400.000100"
+    },
+    {
+      "ts": "1761777600.000100",
+      "user_name": "li",
+      "text": "accounts.industry: we never captured industry on acctMaster. Sales enrichment will populate it later, so it has no source today."
+    }
+  ]
+}

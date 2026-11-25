@@ -1,0 +1,52 @@
+{
+  "id": "saas-product-analytics",
+  "name": "SaaS product analytics",
+  "order": 2,
+  "tagline": "camelCase tracker tables in Snowflake mapped to a Databricks lakehouse.",
+  "scenario": "A software company is rebuilding its analytics on Databricks. Usage events, accounts, users, experiments and support tickets come from a Snowflake warehouse whose tables were named by app developers in camelCase.",
+  "source": "Snowflake: RAW.EVENTS, CORE, PRODUCT, SUPPORT (7 tables, camelCase)",
+  "target": "Databricks: insight.product, insight.support (6 tables)",
+  "features": [
+    "camelCase identifiers",
+    "deprecated look-alike table",
+    "VARIANT to JSON string",
+    "timestamp to date",
+    "fields with no source"
+  ],
+  "source_file": "source_metadata.csv",
+  "target_file": "target_metadata.csv",
+  "source_platform": "SNOWFLAKE",
+  "target_platform": "DATABRICKS",
+  "examples": [
+    {
+      "table": "insight.product.events",
+      "column": "",
+      "what": "trackEvents wins; trackEvents_v1 is flagged as deprecated in Slack."
+    },
+    {
+      "table": "insight.product.events",
+      "column": "event_timestamp",
+      "what": "evtTs, matched through the Ts = timestamp convention."
+    },
+    {
+      "table": "insight.product.experiment_exposures",
+      "column": "experiment_key",
+      "what": "flagKey: different words, confirmed by an S2T sheet."
+    },
+    {
+      "table": "insight.product.accounts",
+      "column": "signup_date",
+      "what": "signupTs with a timestamp-to-date check."
+    },
+    {
+      "table": "insight.product.events",
+      "column": "properties",
+      "what": "props: VARIANT loaded as a JSON string."
+    },
+    {
+      "table": "insight.product.nps_responses",
+      "column": "",
+      "what": "No source: the survey tool was never synced."
+    }
+  ]
+}

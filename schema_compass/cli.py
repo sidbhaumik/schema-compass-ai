@@ -42,7 +42,7 @@ def main(argv=None):
     serve.add_argument("--port", type=int, default=int(os.environ.get("DATABRICKS_APP_PORT") or os.environ.get("PORT") or 8000))
     serve.add_argument("--home", default=os.environ.get("SCHEMA_COMPASS_HOME", "workspace"),
                        help="Folder that stores projects (default ./workspace)")
-    serve.add_argument("--no-demo", action="store_true", help="Do not create the demo project on first run")
+    serve.add_argument("--no-demo", action="store_true", help="Do not create the sample project on first run")
     serve.add_argument("--no-ai", action="store_true", help="Disable Claude review even if credentials exist")
 
     match = sub.add_parser("match", help="Match a target table or table.column")
@@ -107,7 +107,7 @@ def main(argv=None):
             sync = lambda path, deleted=False: mirror.remove(path) if deleted else mirror.push(path)
         workspace = Workspace(args.home, sync=sync)
         if not args.no_demo:
-            workspace.seed_demo(Path(__file__).resolve().parent.parent / "demo")
+            workspace.seed_demo(Path(__file__).resolve().parent.parent / "samples")
         embedder = reranker = None
         model = args.embedding_model or os.environ.get("SCHEMA_COMPASS_EMBEDDINGS")
         if model:

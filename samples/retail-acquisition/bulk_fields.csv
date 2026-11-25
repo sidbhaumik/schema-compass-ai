@@ -1,0 +1,4 @@
+target_table,target_column
+lumen.sales.orders,
+LUMEN_DW.CUSTOMER.CUSTOMER_PROFILE,SIGNUP_DATE
+lumen.product.product_catalog,product_name

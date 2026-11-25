@@ -1,7 +1,9 @@
 """FastAPI service and self-service web UI, organized by mapping project."""
 from __future__ import annotations
 
+import io
 import re
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -11,9 +13,10 @@ from pydantic import BaseModel, Field
 
 from . import __version__
 from .export import bulk_requests, result_row, to_csv
-from .workspace import Project, Workspace, read_table_file
+from .workspace import Project, Workspace, list_samples, read_table_file
 
 STATIC = Path(__file__).parent / "static"
+SAMPLES = Path(__file__).resolve().parent.parent / "samples"
 MAX_UPLOAD = 25 * 1024 * 1024
 MAX_AI_BULK = 50
 USER_HEADERS = ("x-forwarded-email", "x-forwarded-preferred-username", "x-forwarded-user", "x-auth-request-email")
@@ -60,7 +63,7 @@ async def read_upload(file: UploadFile) -> bytes:
     return data
 
 
-def create_app(workspace: Workspace, *, embedder=None, reranker=None) -> FastAPI:
+def create_app(workspace: Workspace, *, embedder=None, reranker=None, samples_dir: Path = SAMPLES) -> FastAPI:
     app = FastAPI(title="Schema Compass", version=__version__)
 
     def project(pid: str) -> Project:
@@ -104,6 +107,33 @@ def create_app(workspace: Workspace, *, embedder=None, reranker=None) -> FastAPI
     def config(request: Request):
         return dict(version=__version__, user=current_user(request), ai_review=getattr(reranker, "model", None),
                     embeddings=getattr(embedder, "model_name", None), max_ai_bulk=MAX_AI_BULK)
+
+    # --------------------------------------------------------------- samples
+    def sample_dir(sample_id: str) -> Path:
+        match = next((m for m in list_samples(samples_dir) if m["id"] == sample_id), None)
+        if match is None:
+            raise HTTPException(404, "Sample not found.")
+        return samples_dir / match["id"]
+
+    @app.get("/api/samples")
+    def samples():
+        return [{k: m.get(k) for k in ("id", "name", "tagline", "scenario", "source", "target", "features",
+                                        "examples")} for m in list_samples(samples_dir)]
+
+    @app.post("/api/samples/{sample_id}/projects")
+    def create_sample_project(sample_id: str):
+        return workspace.create_from_sample(sample_dir(sample_id)).summary()
+
+    @app.get("/api/samples/{sample_id}.zip")
+    def sample_zip(sample_id: str):
+        folder = sample_dir(sample_id)
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+            for path in sorted(folder.rglob("*")):
+                if path.is_file() and path.name != ".DS_Store":
+                    archive.write(path, f"{folder.name}/{path.relative_to(folder).as_posix()}")
+        return Response(buffer.getvalue(), media_type="application/zip",
+                        headers={"Content-Disposition": f'attachment; filename="schema-compass-sample-{folder.name}.zip"'})
 
     # -------------------------------------------------------------- projects
     @app.get("/api/projects")

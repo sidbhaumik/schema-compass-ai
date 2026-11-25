@@ -1,0 +1,51 @@
+{
+  "id": "clinic-network",
+  "name": "Clinic network EHR",
+  "order": 3,
+  "tagline": "Terse clinical codes in a legacy Databricks EHR mapped to a Snowflake warehouse.",
+  "scenario": "A network of outpatient clinics is consolidating its legacy electronic health record extracts (Databricks) into a Snowflake clinical warehouse. All patients, clinicians and clinics are fictional; the metadata contains no patient data.",
+  "source": "Databricks: legacy_ehr.clinical, scheduling, reference (7 tables, short clinical codes)",
+  "target": "Snowflake: HEALTH_DW.CLINICAL (7 tables)",
+  "features": [
+    "clinical abbreviations (PT, ENC, DX, RSLT)",
+    "Excel S2T sheet",
+    "text-to-date and text-to-number conversions",
+    "derived field with no source"
+  ],
+  "source_file": "source_metadata.csv",
+  "target_file": "target_metadata.csv",
+  "source_platform": "DATABRICKS",
+  "target_platform": "SNOWFLAKE",
+  "examples": [
+    {
+      "table": "HEALTH_DW.CLINICAL.PATIENT",
+      "column": "DATE_OF_BIRTH",
+      "what": "BIRTH_DT, with a text-to-date conversion from the Excel S2T sheet."
+    },
+    {
+      "table": "HEALTH_DW.CLINICAL.LAB_RESULT",
+      "column": "RESULT_VALUE",
+      "what": "RSLT_VAL, with a warning that values like <5 need cleansing."
+    },
+    {
+      "table": "HEALTH_DW.CLINICAL.ENCOUNTER",
+      "column": "ATTENDING_PROVIDER_ID",
+      "what": "ATTND_PROV_ID through clinical abbreviations."
+    },
+    {
+      "table": "HEALTH_DW.CLINICAL.DIAGNOSIS",
+      "column": "ICD10_CODE",
+      "what": "DX_CD, with the ICD-9/ICD-10 caveat in the dictionary."
+    },
+    {
+      "table": "HEALTH_DW.CLINICAL.APPOINTMENT",
+      "column": "IS_NO_SHOW",
+      "what": "Derived from APPT_STAT_CD per the S2T sheet."
+    },
+    {
+      "table": "HEALTH_DW.CLINICAL.ENCOUNTER",
+      "column": "LENGTH_OF_STAY_DAYS",
+      "what": "No source: it is calculated."
+    }
+  ]
+}

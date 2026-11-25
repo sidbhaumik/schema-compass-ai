@@ -23,7 +23,17 @@ ABBREVIATIONS = {
     "snap": "snapshot", "sq": "square", "ft": "feet", "stat": "status", "str": "store",
     "strt": "start", "subcat": "subcategory", "sts": "status", "supp": "supplier",
     "tot": "total", "trkg": "tracking", "ts": "timestamp", "txn": "transaction",
-    "typ": "type", "uom": "unit of measure", "upd": "updated", "vndr": "vendor",
+    "typ": "type", "uom": "unit of measure",
+    # clinical
+    "abn": "abnormal", "appt": "appointment", "attnd": "attending", "demog": "demographics", "disch": "discharge",
+    "dx": "diagnosis", "enc": "encounter", "encntr": "encounter", "fac": "facility", "lang": "language",
+    "mrn": "medical record number", "npi": "national provider identifier", "prim": "primary", "prov": "provider",
+    "pt": "patient", "rslt": "result", "seq": "sequence", "spclty": "specialty",
+    # people and HR
+    "abs": "absence", "hrs": "hours", "lvl": "level", "mgr": "manager", "orig": "original", "pref": "preferred",
+    "req": "requisition", "term": "termination", "ttl": "title",
+    # product analytics
+    "anon": "anonymous", "csat": "customer satisfaction", "evt": "event", "subj": "subject", "upd": "updated", "vndr": "vendor",
     "vw": "view", "whse": "warehouse", "wk": "week", "yr": "year",
 }
 
@@ -36,7 +46,9 @@ SYNONYMS = {
     "created": ("signup", "enrolled", "registered"), "signup": ("created", "registration"),
     "status": ("state",), "amount": ("value",), "units": ("quantity",), "quantity": ("units",),
     "description": ("name", "text"), "postal": ("zip",), "zip": ("postal",),
-    "region": ("area",), "store": ("location", "site"), "shipped": ("ship",),
+    "region": ("area", "province"), "province": ("region",), "store": ("location", "site"), "shipped": ("ship",),
+    "employee": ("worker", "staff"), "worker": ("employee",), "leave": ("absence",), "absence": ("leave",),
+    "experiment": ("flag", "variant"), "solved": ("resolved",), "resolved": ("solved",),
 }
 
 STOPWORDS = {"the", "a", "an", "of", "for", "and", "or", "to"}

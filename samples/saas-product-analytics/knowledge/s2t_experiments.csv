@@ -1,0 +1,3 @@
+target_table,target_column,source_table,source_column,transformation,notes
+insight.product.experiment_exposures,experiment_key,PRODUCT.FEATURES.flagExposure,flagKey,Direct,Every experiment is implemented as a feature flag; the flag key is the experiment key
+insight.product.experiment_exposures,exposed_at,PRODUCT.FEATURES.flagExposure,exposedTs,Direct,UTC

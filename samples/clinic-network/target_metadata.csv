@@ -1,0 +1,42 @@
+PLATFORM,TABLE_PHYSICAL_NAME,TABLE_LOGICAL_NAME,TABLE_DESCRIPTION,COLUMN_PHYSICAL_NAME,COLUMN_LOGICAL_NAME,COLUMN_DESCRIPTION,COLUMN_DATATYPE,COLUMN_LENGTH
+SNOWFLAKE,HEALTH_DW.CLINICAL.PATIENT,Patient,Golden patient record.,PATIENT_ID,Patient ID,Patient key.,"NUMBER(18,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.PATIENT,Patient,Golden patient record.,MEDICAL_RECORD_NUMBER,MRN,Medical record number.,VARCHAR(20),20
+SNOWFLAKE,HEALTH_DW.CLINICAL.PATIENT,Patient,Golden patient record.,FIRST_NAME,First Name,Given name.,VARCHAR(60),60
+SNOWFLAKE,HEALTH_DW.CLINICAL.PATIENT,Patient,Golden patient record.,LAST_NAME,Last Name,Family name.,VARCHAR(80),80
+SNOWFLAKE,HEALTH_DW.CLINICAL.PATIENT,Patient,Golden patient record.,DATE_OF_BIRTH,Date of Birth,Birth date.,DATE,
+SNOWFLAKE,HEALTH_DW.CLINICAL.PATIENT,Patient,Golden patient record.,SEX,Sex,Administrative sex.,VARCHAR(1),1
+SNOWFLAKE,HEALTH_DW.CLINICAL.PATIENT,Patient,Golden patient record.,POSTAL_CODE,Postal Code,Home postal code.,VARCHAR(10),10
+SNOWFLAKE,HEALTH_DW.CLINICAL.PATIENT,Patient,Golden patient record.,PREFERRED_LANGUAGE,Preferred Language,Language the patient prefers.,VARCHAR(10),10
+SNOWFLAKE,HEALTH_DW.CLINICAL.ENCOUNTER,Encounter,Patient visits and admissions.,ENCOUNTER_ID,Encounter ID,Visit key.,"NUMBER(18,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.ENCOUNTER,Encounter,Patient visits and admissions.,PATIENT_ID,Patient ID,Patient.,"NUMBER(18,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.ENCOUNTER,Encounter,Patient visits and admissions.,ADMIT_DATE,Admit Date,Start of the visit.,DATE,
+SNOWFLAKE,HEALTH_DW.CLINICAL.ENCOUNTER,Encounter,Patient visits and admissions.,DISCHARGE_DATE,Discharge Date,End of the visit.,DATE,
+SNOWFLAKE,HEALTH_DW.CLINICAL.ENCOUNTER,Encounter,Patient visits and admissions.,ENCOUNTER_TYPE,Encounter Type,Kind of visit.,VARCHAR(20),20
+SNOWFLAKE,HEALTH_DW.CLINICAL.ENCOUNTER,Encounter,Patient visits and admissions.,FACILITY_ID,Facility ID,Clinic.,"NUMBER(9,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.ENCOUNTER,Encounter,Patient visits and admissions.,ATTENDING_PROVIDER_ID,Attending Provider,Responsible clinician.,"NUMBER(18,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.ENCOUNTER,Encounter,Patient visits and admissions.,LENGTH_OF_STAY_DAYS,Length of Stay,Days between admission and discharge.,"NUMBER(5,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.DIAGNOSIS,Diagnosis,"Encounter diagnoses, ICD-10 only.",ENCOUNTER_ID,Encounter ID,Visit.,"NUMBER(18,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.DIAGNOSIS,Diagnosis,"Encounter diagnoses, ICD-10 only.",SEQUENCE_NUMBER,Sequence,Diagnosis order on the visit.,"NUMBER(4,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.DIAGNOSIS,Diagnosis,"Encounter diagnoses, ICD-10 only.",ICD10_CODE,ICD-10 Code,ICD-10-CM diagnosis code.,VARCHAR(8),8
+SNOWFLAKE,HEALTH_DW.CLINICAL.DIAGNOSIS,Diagnosis,"Encounter diagnoses, ICD-10 only.",IS_PRIMARY,Is Primary,Principal diagnosis indicator.,BOOLEAN,
+SNOWFLAKE,HEALTH_DW.CLINICAL.LAB_RESULT,Lab Result,Numeric laboratory results.,LAB_RESULT_ID,Lab Result ID,Result key.,"NUMBER(18,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.LAB_RESULT,Lab Result,Numeric laboratory results.,ENCOUNTER_ID,Encounter ID,Ordering visit.,"NUMBER(18,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.LAB_RESULT,Lab Result,Numeric laboratory results.,LOINC_CODE,LOINC Code,Test code.,VARCHAR(10),10
+SNOWFLAKE,HEALTH_DW.CLINICAL.LAB_RESULT,Lab Result,Numeric laboratory results.,RESULT_VALUE,Result Value,Numeric measured value.,"NUMBER(12,4)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.LAB_RESULT,Lab Result,Numeric laboratory results.,RESULT_UNIT,Unit,Unit of measure.,VARCHAR(20),20
+SNOWFLAKE,HEALTH_DW.CLINICAL.LAB_RESULT,Lab Result,Numeric laboratory results.,RESULT_DATE,Result Date,Date finalized.,DATE,
+SNOWFLAKE,HEALTH_DW.CLINICAL.LAB_RESULT,Lab Result,Numeric laboratory results.,IS_ABNORMAL,Is Abnormal,Outside the reference range.,BOOLEAN,
+SNOWFLAKE,HEALTH_DW.CLINICAL.PROVIDER,Provider,Clinicians.,PROVIDER_ID,Provider ID,Provider key.,"NUMBER(18,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.PROVIDER,Provider,Clinicians.,NPI_NUMBER,NPI,National Provider Identifier.,VARCHAR(10),10
+SNOWFLAKE,HEALTH_DW.CLINICAL.PROVIDER,Provider,Clinicians.,PROVIDER_NAME,Provider Name,Full name.,VARCHAR(120),120
+SNOWFLAKE,HEALTH_DW.CLINICAL.PROVIDER,Provider,Clinicians.,SPECIALTY,Specialty,Primary specialty.,VARCHAR(60),60
+SNOWFLAKE,HEALTH_DW.CLINICAL.APPOINTMENT,Appointment,Scheduled appointments.,APPOINTMENT_ID,Appointment ID,Appointment key.,"NUMBER(18,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.APPOINTMENT,Appointment,Scheduled appointments.,PATIENT_ID,Patient ID,Patient.,"NUMBER(18,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.APPOINTMENT,Appointment,Scheduled appointments.,SCHEDULED_AT,Scheduled At,Scheduled start time.,TIMESTAMP_NTZ,
+SNOWFLAKE,HEALTH_DW.CLINICAL.APPOINTMENT,Appointment,Scheduled appointments.,STATUS,Status,Appointment status.,VARCHAR(12),12
+SNOWFLAKE,HEALTH_DW.CLINICAL.APPOINTMENT,Appointment,Scheduled appointments.,IS_NO_SHOW,Is No-Show,Patient did not arrive.,BOOLEAN,
+SNOWFLAKE,HEALTH_DW.CLINICAL.APPOINTMENT,Appointment,Scheduled appointments.,FACILITY_ID,Facility ID,Clinic.,"NUMBER(9,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.FACILITY,Facility,Clinic locations.,FACILITY_ID,Facility ID,Clinic key.,"NUMBER(9,0)",
+SNOWFLAKE,HEALTH_DW.CLINICAL.FACILITY,Facility,Clinic locations.,FACILITY_NAME,Facility Name,Clinic name.,VARCHAR(100),100
+SNOWFLAKE,HEALTH_DW.CLINICAL.FACILITY,Facility,Clinic locations.,STATE,State,US state.,VARCHAR(2),2
+SNOWFLAKE,HEALTH_DW.CLINICAL.FACILITY,Facility,Clinic locations.,LICENSED_BEDS,Licensed Beds,Licensed bed capacity.,"NUMBER(6,0)",

@@ -87,6 +87,10 @@ table.grid td.mono{white-space:nowrap}table.grid td.num{text-align:right;font-va
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);max-width:460px;width:calc(100% - 32px);padding:20px}
 dialog::backdrop{background:rgba(0,0,0,.4)}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.9rem;z-index:50}
+.samples{display:grid;gap:8px}
+.sample{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sample .info{flex:1;min-width:220px}.sample .info b{display:block}.sample .tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.sample .tags span{font-size:.72rem;padding:1px 7px;border-radius:999px;background:var(--soft);color:var(--muted)}
 .hide{display:none!important}
 @media (max-width:960px){.layout{grid-template-columns:minmax(0,1fr)}.steps-setup{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:700px){.search{grid-template-columns:minmax(0,1fr)}.cols2{grid-template-columns:minmax(0,1fr)}main{padding:16px 16px 60px}.topbar-in{padding:10px 16px}.proj select{max-width:150px}}
@@ -188,13 +192,17 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
     <div class="actions" style="justify-content:flex-end"><button value="cancel" formnovalidate>Cancel</button><button class="primary" value="ok" id="dlgOk">Save</button></div>
   </form>
 </dialog>
-<dialog id="projectDlg">
+<dialog id="projectDlg" style="max-width:680px">
   <form method="dialog">
     <h2>New mapping project</h2>
     <p class="muted small">A project holds one source and one target metadata set, plus reference documents and decisions.</p>
+    <h3 style="margin-top:14px">Start from a sample</h3>
+    <p class="muted small" style="margin-top:0">Fictional, ready-to-use scenarios with metadata, documents and suggested searches. Download the files to practice uploading them yourself.</p>
+    <div id="sampleList" class="samples"></div>
+    <h3 style="margin-top:18px">Or start empty</h3>
     <label for="pName">Name</label><input id="pName" maxlength="80" placeholder="e.g. Warehouse consolidation wave 2">
     <label for="pDesc" style="margin-top:10px">Description <span style="font-weight:400">(optional)</span></label><input id="pDesc" maxlength="500">
-    <div class="actions" style="justify-content:flex-end"><button value="cancel" formnovalidate>Cancel</button><button class="primary" value="ok">Create</button></div>
+    <div class="actions" style="justify-content:flex-end"><button value="cancel" formnovalidate>Cancel</button><button class="primary" value="ok">Create empty project</button></div>
   </form>
 </dialog>
 
@@ -248,7 +256,25 @@ async function loadProject() {
   route();
 }
 $("#projectSel").addEventListener("change", e => { S.pid = e.target.value; loadProject(); });
-$("#newProjectBtn").addEventListener("click", () => { $("#pName").value = ""; $("#pDesc").value = ""; $("#projectDlg").showModal(); });
+$("#newProjectBtn").addEventListener("click", async () => {
+  $("#pName").value = ""; $("#pDesc").value = ""; $("#projectDlg").showModal();
+  try {
+    const samples = await api("/api/samples");
+    $("#sampleList").innerHTML = samples.map(m => `<div class="sample"><div class="info"><b>${esc(m.name)}</b><span class="muted small">${esc(m.tagline)}</span>
+      <div class="tags">${(m.features || []).slice(0, 4).map(f => `<span>${esc(f)}</span>`).join("")}</div></div>
+      <a class="btn sm" href="/api/samples/${encodeURIComponent(m.id)}.zip" download>Download files</a>
+      <button type="button" class="sm primary" data-sample="${esc(m.id)}">Create</button></div>`).join("") || `<p class="muted small">No samples are installed on this server.</p>`;
+  } catch { $("#sampleList").innerHTML = ""; }
+});
+$("#sampleList").addEventListener("click", async e => {
+  const b = e.target.closest("[data-sample]"); if (!b) return;
+  b.disabled = true; b.textContent = "Creating…";
+  try {
+    const p = await api(`/api/samples/${encodeURIComponent(b.dataset.sample)}/projects`, { method: "POST" });
+    $("#projectDlg").close("cancel"); location.hash = "#find"; await loadProjects(p.id);
+    toast(`${p.name} is ready. Try one of the suggested searches.`);
+  } catch (err) { toast(err.message); b.disabled = false; b.textContent = "Create"; }
+});
 $("#projectDlg").addEventListener("close", async () => {
   if ($("#projectDlg").returnValue !== "ok" || !$("#pName").value.trim()) return;
   try { const p = await api("/api/projects", { method: "POST", body: JSON.stringify({ name: $("#pName").value, description: $("#pDesc").value }) });
@@ -289,9 +315,8 @@ typeahead($("#mapTable"), suggestTables);
 
 /* ---------------- find ---------------- */
 function renderExamples() {
-  const demo = /demo/i.test(S.project?.name || "");
-  const ex = demo ? [["lumen.sales.orders", ""], ["lumen.sales.orders", "order_total_amount"], ["LUMEN_DW.CUSTOMER.CUSTOMER_PROFILE", "SIGNUP_DATE"], ["lumen.product.product_catalog", "product_name"], ["LUMEN_DW.CUSTOMER.CUSTOMER_PROFILE", "MARKETING_OPT_IN"], ["lumen.marketing.customer_reviews", ""]] : [];
-  $("#examples").innerHTML = ex.length ? `<span class="muted small" style="align-self:center">Try:</span>` + ex.map(([t, c]) => `<button type="button" class="chip" data-t="${esc(t)}" data-c="${esc(c)}">${esc(t.split(".").pop())}${c ? "." + esc(c) : ""}</button>`).join("") : "";
+  const ex = S.project?.examples || [];
+  $("#examples").innerHTML = ex.length ? `<span class="muted small" style="align-self:center">Try:</span>` + ex.map(e => `<button type="button" class="chip" data-t="${esc(e.table)}" data-c="${esc(e.column || "")}" title="${esc(e.what || "")}">${esc(e.table.split(".").pop())}${e.column ? "." + esc(e.column) : ""}</button>`).join("") : "";
 }
 $("#examples").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; $("#tTable").value = b.dataset.t; $("#tColumn").value = b.dataset.c; $("#findForm").requestSubmit(); });
 
@@ -314,7 +339,10 @@ function renderResult(r) {
   const tItem = t.column || t.table;
   const color = DECISION_COLOR[a.decision];
   const canDecide = top && a.decision !== "no_source";
+  const sameName = (a, b) => (a || "").toLowerCase() === (b || "").toLowerCase();
+  const example = (S.project?.examples || []).find(e => sameName(e.table, t.table.name) && sameName(e.column, t.column ? t.column.name : ""));
   const decision = `
+  ${example ? `<div class="card small" style="padding:10px 16px"><b>Sample walkthrough:</b> ${esc(example.what)}</div>` : ""}
   <div class="card decision" style="--dc:var(--${color})">
     <div class="label">${esc(a.label)}</div>
     <div class="headline">${esc(a.headline)}</div>
@@ -447,7 +475,8 @@ function renderSetup() {
     ["#srcCard", "#tgtCard", "#docCard"].forEach(s => $(s).innerHTML = ""); return;
   }
   $("#setupTitle").textContent = p.name;
-  $("#setupLead").textContent = (p.description ? p.description + " " : "") + (p.ready ? "This project is ready. Replace files at any time; changes apply immediately." : "Upload metadata for both organizations to start matching.");
+  $("#setupLead").innerHTML = esc((p.description ? p.description + " " : "") + (p.ready ? "This project is ready. Replace files at any time; changes apply immediately." : "Upload metadata for both organizations to start matching."))
+    + (p.sample ? ` <a href="/api/samples/${encodeURIComponent(p.sample)}.zip" download>Download this sample's files</a>.` : "");
   $("#srcCard").innerHTML = metaCard("source", 1, "Source metadata", "The organization or system you are migrating from.");
   $("#tgtCard").innerHTML = metaCard("target", 2, "Target metadata", "The data products you are building, in Snowflake or Databricks.");
   const files = p.knowledge_files || [];

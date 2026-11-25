@@ -1,0 +1,52 @@
+{
+  "id": "retail-acquisition",
+  "name": "Retail acquisition",
+  "order": 1,
+  "tagline": "An acquired retailer's terse Snowflake warehouse mapped to Databricks and Snowflake data products.",
+  "scenario": "A retailer acquired another chain and is backfilling ten years of history. The acquired company's Snowflake warehouse uses abbreviated names (ORD_HDR.TOT_AMT); the target data products are spread across Databricks and Snowflake.",
+  "source": "Snowflake: SRC_DW (12 tables, abbreviated names)",
+  "target": "Databricks + Snowflake: lumen, LUMEN_DW (10 tables)",
+  "features": [
+    "abbreviated names",
+    "deprecated look-alike table",
+    "S2T sheet and Slack evidence",
+    "type and width checks",
+    "table with no source"
+  ],
+  "source_file": "source_metadata.csv",
+  "target_file": "target_metadata.csv",
+  "source_platform": "SNOWFLAKE",
+  "target_platform": "DATABRICKS",
+  "examples": [
+    {
+      "table": "lumen.sales.orders",
+      "column": "",
+      "what": "ORD_HDR wins; the deprecated ORD_HDR_LGCY is demoted."
+    },
+    {
+      "table": "lumen.sales.orders",
+      "column": "order_total_amount",
+      "what": "TOT_AMT, confirmed in Slack."
+    },
+    {
+      "table": "LUMEN_DW.CUSTOMER.CUSTOMER_PROFILE",
+      "column": "SIGNUP_DATE",
+      "what": "CRT_DT: names differ, an S2T sheet maps it."
+    },
+    {
+      "table": "lumen.product.product_catalog",
+      "column": "product_name",
+      "what": "ITEM_DESC, not SKU_ID or ITEM_LONG_DESC."
+    },
+    {
+      "table": "LUMEN_DW.CUSTOMER.CUSTOMER_PROFILE",
+      "column": "MARKETING_OPT_IN",
+      "what": "OPT_IN_FLG with a Y/N to boolean check."
+    },
+    {
+      "table": "lumen.marketing.customer_reviews",
+      "column": "",
+      "what": "No source: the reviews feed never existed."
+    }
+  ]
+}

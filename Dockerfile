@@ -10,7 +10,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY schema_compass ./schema_compass
-COPY demo ./demo
+COPY samples ./samples
 
 RUN useradd --create-home --uid 10001 compass && mkdir -p /data && chown compass /data
 USER compass

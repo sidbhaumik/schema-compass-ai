@@ -16,6 +16,7 @@ When teams migrate or consolidate data in Snowflake or Databricks, analysts spen
 ## Contents
 
 - [Get started in five minutes](#get-started-in-five-minutes)
+- [Sample datasets](#sample-datasets)
 - [Use it on your own migration](#use-it-on-your-own-migration)
 - [Optional features](#optional-features)
 - [Where your data goes](#where-your-data-goes)
@@ -73,9 +74,9 @@ Open **http://localhost:8000**. Projects are stored in the `compass-data` volume
 
 To build the image from source instead, clone the repo and run `docker build -t schema-compass .`.
 
-### Try the demo
+### Try the samples
 
-On first start the app creates a **Retail migration demo** project. It's a fictional acquisition: the target organization (Databricks and Snowflake tables such as `lumen.sales.orders`) is backfilling ten years of history from a source Snowflake warehouse with terse names such as `ORD_HDR.TOT_AMT`. Click the example chips under the search box, or try these:
+On first start the app creates the **Retail acquisition** sample project. It's a fictional acquisition: the target organization (Databricks and Snowflake tables such as `lumen.sales.orders`) is backfilling ten years of history from a source Snowflake warehouse with terse names such as `ORD_HDR.TOT_AMT`. Click the suggested searches under the search box, or try these:
 
 | Target table / column | What you'll see |
 | --- | --- |
@@ -85,6 +86,19 @@ On first start the app creates a **Retail migration demo** project. It's a ficti
 | `product_catalog` / `product_name` | `ITEM_DESC`, not `SKU_ID` (an identifier, not a name) and not `ITEM_LONG_DESC` (Slack says it holds marketing copy). |
 | `CUSTOMER_PROFILE` / `MARKETING_OPT_IN` | Use `OPT_IN_FLG`, but first agree how `'Y'`/`'N'` converts to a boolean. |
 | `customer_reviews` | **No reliable source found.** The documents say this data never existed in the source. |
+
+## Sample datasets
+
+Four fictional scenarios ship with the app, each built to show different features. Select **New** in the top bar, then **Create** next to a sample to get a ready-to-use project with its suggested searches. Or select **Download files** and upload them yourself to practice the setup flow.
+
+| Sample | Source → target | What it exercises | Try |
+| --- | --- | --- | --- |
+| [Retail acquisition](samples/retail-acquisition/) | Snowflake (abbreviated names) → Databricks + Snowflake | Deprecated look-alike table, S2T and Slack evidence, Y/N to boolean, a table with no source | `product_catalog` / `product_name` |
+| [SaaS product analytics](samples/saas-product-analytics/) | Snowflake (camelCase tracker tables) → Databricks | camelCase names, VARIANT to JSON, timestamp to date, time zone notes, fields with no source | `experiment_exposures` / `experiment_key` |
+| [Clinic network EHR](samples/clinic-network/) | Databricks (clinical codes) → Snowflake | Clinical abbreviations (PT, DX, RSLT), an Excel S2T sheet, text-to-date and text-to-number cautions, a calculated field | `LAB_RESULT` / `RESULT_VALUE` |
+| [People analytics (HR)](samples/people-analytics/) | Snowflake HRIS, delivered as Excel with its own headers → Databricks | Non-standard Excel headers, close look-alikes (original vs last hire date, legal vs preferred name), percent to fraction | `employees` / `hire_date` |
+
+Each sample folder has a README, an answer key (`gold_mappings.csv`) and a ready-made list for bulk mapping (`bulk_fields.csv`). All sample data is fictional metadata; none of it is real data. To add your own sample, see [`samples/README.md`](samples/README.md).
 
 ## Use it on your own migration
 
@@ -154,7 +168,7 @@ You don't have to use those exact headers. Common spellings are recognized autom
 | Data type / length | Recommended | `data_type`, `datatype`, `full_data_type` · `length`, `character_maximum_length` |
 | Platform | Optional | `platform` (`SNOWFLAKE` or `DATABRICKS`); otherwise the platform you pick at upload |
 
-For example files, see [`demo/source_metadata.csv`](demo/source_metadata.csv) and [`demo/target_metadata.csv`](demo/target_metadata.csv).
+For example files, see [`samples/retail-acquisition/source_metadata.csv`](samples/retail-acquisition/source_metadata.csv), or the [People analytics workbook](samples/people-analytics/source_metadata.xlsx), which uses HRIS-style headers (`Table Name`, `Field Name`, `Definition`, `Data Type`).
 
 ### 3. Upload the metadata
 
@@ -170,7 +184,7 @@ Drop files on card 3. They are searched whenever you look up a field, and they c
 | Slack conversations | `.json` | A channel export: a list of messages, or `{"channel": ..., "messages": [...]}`. Replies are grouped by thread. |
 | Notes, data dictionaries, runbooks | `.md`, `.txt` | Any text. It's split by heading. |
 
-Examples are in [`demo/knowledge/`](demo/knowledge). A passage counts as evidence for a candidate only when it names both the target field and the source field. Phrases like "deprecated", "not X" or "don't use" turn it into a warning, and phrases like "nothing to backfill" or "no source" mark a target as having no source.
+Each [sample](samples/) has examples in its `knowledge/` folder. A passage counts as evidence for a candidate only when it names both the target field and the source field. Each sentence is read separately. "Use X" counts only in a sentence that names the target. "Not X" or "instead of X" in such a sentence turns it into a warning. "X is deprecated" or "don't use X" warns wherever it appears. Notes like "heads up" or "time zone" become checks rather than votes. Phrases like "nothing to backfill", "no source" or "never stored" mark a target as having no source. If the passage names specific columns, the warning covers only those.
 
 ### 5. Find a source
 
@@ -259,9 +273,9 @@ Requires Databricks CLI v1.0 or later, signed in with `databricks auth login --p
      "resources": [{"name": "data-volume", "uc_securable": {"securable_full_name": "<catalog>.schema_compass.app_data",
      "securable_type": "VOLUME", "permission": "WRITE_VOLUME"}}]}'
    ```
-3. **Upload the app files and deploy.** Only `schema_compass/`, `demo/`, `app.yaml` and `requirements.txt` are needed.
+3. **Upload the app files and deploy.** Only `schema_compass/`, `samples/`, `app.yaml` and `requirements.txt` are needed.
    ```bash
-   mkdir -p /tmp/sc-app && cp -R schema_compass demo app.yaml requirements.txt /tmp/sc-app/
+   mkdir -p /tmp/sc-app && cp -R schema_compass samples app.yaml requirements.txt /tmp/sc-app/
    databricks workspace import-dir /tmp/sc-app /Workspace/Users/<you>/schema-compass --overwrite
    databricks apps deploy schema-compass --source-code-path /Workspace/Users/<you>/schema-compass
    ```
@@ -274,7 +288,7 @@ To enable AI review, add a secret resource with the key `anthropic-api-key` hold
 | Project storage | `--home` | `SCHEMA_COMPASS_HOME` | `./workspace` |
 | Durable storage on a UC volume | | `SCHEMA_COMPASS_VOLUME` (`/Volumes/<catalog>/<schema>/<volume>`) | off |
 | Host / port | `--host` / `--port` | `HOST` / `PORT` (or `DATABRICKS_APP_PORT`) | `127.0.0.1` / `8000` |
-| Skip the demo project | `--no-demo` | | demo created on first run |
+| Skip the sample project | `--no-demo` | | Retail acquisition sample created on first run |
 | AI review | `--no-ai` to disable | `ANTHROPIC_API_KEY`, `SCHEMA_COMPASS_MODEL`, `SCHEMA_COMPASS_EFFORT` | off without a key |
 | Embeddings | `--embedding-model` (before `serve`) | `SCHEMA_COMPASS_EMBEDDINGS` | off |
 
@@ -309,14 +323,18 @@ flowchart LR
 
 ### Measuring quality
 
-The demo includes 82 hand-labeled answers in [`demo/gold_mappings.csv`](demo/gold_mappings.csv). `python -m schema_compass.cli evaluate` reports top-1 accuracy, recall@3, and whether no-source fields are correctly left unmatched:
+Every sample has a hand-labeled answer key (`gold_mappings.csv`). `python -m schema_compass.cli evaluate` reports top-1 accuracy, recall@3, and whether target columns with no source are correctly left unmatched. Results without and with each sample's reference documents:
 
-| | Table top-1 | Column top-1 | Column recall@3 | No-source fields left unmatched |
+| Sample | Tables correct | Columns correct | Right column in top 3 | No-source columns left unmatched |
 | --- | ---: | ---: | ---: | ---: |
-| Metadata only (`--no-knowledge`) | 9/9 | 66/66 | 66/66 | 5/6 |
-| Metadata + documents | 9/9 | 66/66 | 66/66 | 6/6 |
+| Retail acquisition | 9/9 → 9/9 | 66/66 → 66/66 | 66/66 → 66/66 | 5/6 → 6/6 |
+| SaaS product analytics | 5/5 → 5/5 | 33/34 → 34/34 | 34/34 → 34/34 | 4/5 → 5/5 |
+| Clinic network EHR | 7/7 → 7/7 | 38/40 → 39/40 | 40/40 → 40/40 | 1/1 → 1/1 |
+| People analytics (HR) | 5/5 → 5/5 | 35/37 → 37/37 | 37/37 → 37/37 | 2/2 → 2/2 |
 
-The scoring weights were tuned on this small synthetic set, so treat these results as a regression check, not a benchmark. Before relying on the confidence bands for a real program:
+The one remaining clinic miss is correct but low-confidence (`SCHEDULED_AT` ← `APPT_TS`, scored below 40), so it's counted as unmatched.
+
+The scoring weights were tuned on the retail sample, and the other three were written afterwards as a check. All are small and synthetic, so treat these results as a regression check, not a benchmark. Before relying on the confidence bands for a real program:
 1. Label 50 to 100 fields from your own migration, including look-alikes and fields with no source.
 2. Run `evaluate --gold your_labels.csv`.
 3. Adjust `Weights` in [`engine.py`](schema_compass/engine.py) if needed.
@@ -325,7 +343,7 @@ Source metadata is indexed once per project, so a single server handles tens of 
 
 ## Command line and API
 
-The CLI reads [`schema-compass.toml`](schema-compass.toml), which points at the demo by default. Edit it to use CSV files, a Snowflake export table (`type = "snowflake"`, `connection`, `table`) or Unity Catalog (`type = "databricks"`, `profile`, `catalogs`, `warehouse_id`). Install the connector extras first with `pip install -r requirements-connectors.txt`.
+The CLI reads [`schema-compass.toml`](schema-compass.toml), which points at the retail sample by default. Edit it to use CSV files, a Snowflake export table (`type = "snowflake"`, `connection`, `table`) or Unity Catalog (`type = "databricks"`, `profile`, `catalogs`, `warehouse_id`). Install the connector extras first with `pip install -r requirements-connectors.txt`.
 
 ```bash
 python -m schema_compass.cli match orders                     # best source table
@@ -349,6 +367,7 @@ The web app's REST API is scoped to projects. Interactive docs are at **http://1
 | `POST` | `/api/projects/{id}/map-table` | Map every column of a table (also `GET .../map-table.csv?table=`) |
 | `POST` | `/api/projects/{id}/bulk` | Upload a list of target fields; returns rows and an export link |
 | `POST` / `GET` | `/api/projects/{id}/feedback` | Record or list decisions (also `GET .../approved.csv`) |
+| `GET` / `POST` | `/api/samples`, `/api/samples/{id}/projects`, `/api/samples/{id}.zip` | List samples, create a project from one, or download its files |
 | `GET` | `/healthz`, `/api/config` | Health check; AI review and embedding status and the signed-in user |
 
 ## Troubleshooting
@@ -363,7 +382,7 @@ The web app's REST API is scoped to projects. Interactive docs are at **http://1
 | A document upload says "No usable content found" | S2T sheets need target/source table and column headers, and Slack exports need a `text` field per message. |
 | The **AI review** box is greyed out | The server didn't find `ANTHROPIC_API_KEY` when it started. Set the variable, then restart. |
 | Everything scores low | The metadata probably lacks descriptions and business names. Check the quality report and enrich the files. |
-| The demo project is missing | It's only created when the workspace is empty. Start with a new `--home` folder to see it again. |
+| The sample project is missing | It's only created when the workspace is empty. Select **New** and create any sample from there. |
 
 ## Development
 
@@ -380,10 +399,10 @@ python -m unittest discover -s tests -v
 | `schema_compass/workspace.py` | Projects, flexible metadata import and quality reports |
 | `schema_compass/rerank.py` | Optional Claude review |
 | `schema_compass/api.py`, `static/index.html` | REST API and web app |
-| `demo/` | Fictional demo metadata, documents and gold labels |
+| `samples/` | Four fictional sample scenarios: metadata, documents, answer keys and bulk lists |
 
 GitHub Actions runs the tests on every push. Publishing a GitHub release builds the Docker image for `linux/amd64` and `linux/arm64` and pushes it to the GitHub Container Registry. See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## License
 
-[MIT](LICENSE). All organizations, products, people and conversations in `demo/` are fictional.
+[MIT](LICENSE). All organizations, products, people and conversations in `samples/` are fictional.

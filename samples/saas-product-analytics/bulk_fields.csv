@@ -1,0 +1,4 @@
+target_table,target_column
+insight.product.accounts,
+insight.support.tickets,satisfaction_score
+insight.product.events,event_timestamp

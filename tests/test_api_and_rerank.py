@@ -72,7 +72,7 @@ class ApiTests(unittest.TestCase):
     def test_project_match_feedback_and_csv(self):
         with tempfile.TemporaryDirectory() as tmp:
             ws = Workspace(tmp)
-            demo = ws.seed_demo(ROOT / "demo")
+            demo = ws.seed_demo(ROOT / "samples")
             client = TestClient(create_app(ws))
             self.assertEqual(client.get("/healthz").json()["status"], "ok")
             info = client.get(f"/api/projects/{demo.id}").json()

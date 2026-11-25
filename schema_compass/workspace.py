@@ -15,7 +15,6 @@ import csv
 import io
 import json
 import re
-import shutil
 import threading
 import uuid
 from datetime import datetime, timezone
@@ -284,19 +283,37 @@ class Workspace:
             project.save_meta()
             project.invalidate()
 
-    def seed_demo(self, demo_dir: Path) -> Project | None:
-        """Create the bundled retail demo project on first run."""
-        if self.projects() or not demo_dir.exists():
-            return None
-        project = self.create("Retail migration demo",
-                              "Fictional example: OrgTRGT (Databricks + Snowflake) backfills history from OrgSRC.")
+    def create_from_sample(self, sample_dir: Path, name: str | None = None) -> Project:
+        """Create a ready-to-use project from a bundled sample folder."""
+        manifest = load_sample(sample_dir)
+        project = self.create(name or manifest["name"], manifest.get("scenario", ""))
         for side in ("source", "target"):
-            shutil.copy(demo_dir / f"{side}_metadata.csv", project.path(side))
-            rows, report = normalize_metadata(read_table_file("x.csv", project.path(side).read_bytes()))
-            report.update(file=f"{side}_metadata.csv", uploaded_at=project.meta["created_at"])
-            project.meta[f"{side}_report"] = report
-        for doc in (demo_dir / "knowledge").glob("*"):
-            shutil.copy(doc, project.knowledge_dir / doc.name)
+            path = sample_dir / manifest[f"{side}_file"]
+            project.import_metadata(side, path.name, path.read_bytes(), manifest.get(f"{side}_platform", "SNOWFLAKE"))
+        for doc in sorted((sample_dir / "knowledge").glob("*")):
+            if doc.is_file():
+                project.add_knowledge(doc.name, doc.read_bytes())
+        project.meta.update(sample=manifest["id"], examples=manifest.get("examples", []))
         project.save_meta()
-        self.sync(project.root)
         return project
+
+    def seed_demo(self, samples_dir: Path, sample_id: str = "retail-acquisition") -> Project | None:
+        """Create the default sample project on first run (when the workspace is empty)."""
+        sample = Path(samples_dir) / sample_id
+        if self.projects() or not (sample / "sample.json").exists():
+            return None
+        return self.create_from_sample(sample)
+
+
+def load_sample(sample_dir: Path) -> dict:
+    manifest = json.loads((Path(sample_dir) / "sample.json").read_text(encoding="utf-8"))
+    manifest.setdefault("id", Path(sample_dir).name)
+    return manifest
+
+
+def list_samples(samples_dir: Path) -> list[dict]:
+    samples_dir = Path(samples_dir)
+    if not samples_dir.exists():
+        return []
+    found = [load_sample(p.parent) for p in samples_dir.glob("*/sample.json")]
+    return sorted(found, key=lambda m: (m.get("order", 99), m["name"]))

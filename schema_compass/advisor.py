@@ -82,7 +82,9 @@ def _checks(cand: dict, result: dict) -> list[str]:
             checks.append(issue)
     for ev in cand["evidence"]:
         if ev["strength"] < 0 and ev["kind"] != "feedback":
-            checks.append(f"Read the warning in {ev['source']}: \"{ev['snippet'][:140]}\"")
+            checks.append(f"Read the warning in {ev['source']}: \"{ev['snippet'][:160]}\"")
+        elif ev["strength"] == 0 and ev["snippet"]:
+            checks.append(f"Note from {ev['source']}: \"{ev['snippet'][:160]}\"")
     if cand["band"] in {"medium", "low"}:
         checks.append("Compare a sample of values from source and target before approving.")
     llm_rule = result["recommendation"].get("transformation")

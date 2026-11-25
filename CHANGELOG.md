@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Sample datasets
+- Three new fictional scenarios alongside the retail one:
+  - **SaaS product analytics**: camelCase tracker tables, Snowflake → Databricks.
+  - **Clinic network EHR**: clinical abbreviations and an Excel S2T sheet, Databricks → Snowflake.
+  - **People analytics**: an HRIS export in Excel with its own headers → Databricks.
+- Every sample has reference documents, an answer key, a bulk-mapping list and a README. The demo folder moved to `samples/retail-acquisition`.
+- **New → Create** turns any sample into a ready project with suggested searches. **Download files** gets the raw files to practice uploading. Suggested searches now show what each one demonstrates.
+
+### Matching
+- Evidence is read sentence by sentence. "Use X" or "not X" counts only when the same sentence names the target, so a note about one field no longer sways a look-alike field.
+- "No source" notes that name specific columns apply only to those columns.
+- Cautions such as "heads up", time zones or unit conversions appear as checks before use, rather than raising or lowering the score.
+- Added clinical, HR and product-analytics abbreviations, and synonyms such as employee/worker and leave/absence.
+
 ## 1.0.0 (2026-11-22)
 
 First public release.

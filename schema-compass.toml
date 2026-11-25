@@ -2,16 +2,16 @@
 
 [source]                      # the organization you are migrating FROM
 type = "csv"
-path = "demo/source_metadata.csv"
+path = "samples/retail-acquisition/source_metadata.csv"
 # type = "snowflake"; connection = "my_conn"; table = "DB.SCHEMA.SOURCE_METADATA"
 
 [target]                      # the organization whose data products you are building
 type = "csv"
-path = "demo/target_metadata.csv"
+path = "samples/retail-acquisition/target_metadata.csv"
 # type = "databricks"; profile = "my-profile"; catalogs = ["lumen"]; warehouse_id = "..."
 
 [knowledge]                   # S2T sheets (.csv/.xlsx), Slack exports (.json), notes (.md/.txt)
-paths = ["demo/knowledge"]
+paths = ["samples/retail-acquisition/knowledge"]
 
 [feedback]
 db = "runs/feedback.db"
@@ -25,4 +25,4 @@ model = "claude-opus-5-5"
 effort = "medium"
 
 [evaluation]
-gold = "demo/gold_mappings.csv"
+gold = "samples/retail-acquisition/gold_mappings.csv"

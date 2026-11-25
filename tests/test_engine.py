@@ -11,7 +11,7 @@ from schema_compass.knowledge import KnowledgeBase
 from schema_compass.text import normalize, role, type_compatibility
 
 ROOT = Path(__file__).resolve().parents[1]
-DEMO = ROOT / "demo"
+DEMO = ROOT / "samples" / "retail-acquisition"
 
 
 def engine(knowledge=True, feedback=None):

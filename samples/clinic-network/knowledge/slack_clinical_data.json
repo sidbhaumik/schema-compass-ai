@@ -1,0 +1,26 @@
+{
+  "channel": "clinical-data-migration",
+  "messages": [
+    {
+      "ts": "1761000000.000100",
+      "user_name": "rosa",
+      "text": "Is ZIP5 the right source for POSTAL_CODE? Some patients are in Canada."
+    },
+    {
+      "ts": "1761000300.000200",
+      "user_name": "dev",
+      "text": "Yes, ZIP5 maps to POSTAL_CODE. Canadian addresses were never captured in ZIP5, so expect blanks for them.",
+      "thread_ts": "1761000000.000100"
+    },
+    {
+      "ts": "1761259200.000100",
+      "user_name": "dev",
+      "text": "Heads up: RSLT_VAL has values like '<5' and 'POSITIVE'. RESULT_VALUE is numeric, so don't use a plain cast on RSLT_VAL; we need a cleansing rule."
+    },
+    {
+      "ts": "1761518400.000100",
+      "user_name": "rosa",
+      "text": "LICENSED_BEDS should come from BED_CNT in the facility reference table."
+    }
+  ]
+}

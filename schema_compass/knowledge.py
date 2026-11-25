@@ -32,10 +32,18 @@ S2T_ALIASES = {
     "notes": ("notes", "comment", "comments", "remarks"),
 }
 
-NEGATIVE_AFTER = r"[^.\n]{0,60}?\b(deprecated|retired|stale|frozen|obsolete|is wrong|do not use|don't use|not the same|should not be used|no longer)"
-NEGATIVE_BEFORE = r"\b(not|don't use|do not use|never use|avoid|instead of|rather than|ignore)\s+(the\s+)?(?:[\w.]*\.)?"
-NO_SOURCE = re.compile(r"(nothing to backfill|no source|never had|starts? fresh|net[- ]new|no equivalent|"
-                       r"not available in (the )?source|does not exist in (the )?source|no history)", re.I)
+# Statements about the source itself: they hold whatever the target is.
+ABSOLUTE_AFTER = r"[^.\n]{0,60}?\b(deprecated|retired|stale|frozen|obsolete|no longer (?:used|maintained|updated)|should not be used)"
+ABSOLUTE_BEFORE = r"\b(do not use|don't use|never use|avoid)\s+(?:the\s+)?(?:[\w.]*\.)?"
+# Statements relative to a target ("use X, not Y"): they count only when the same sentence names the target.
+RELATIVE_BEFORE = r"\b(not|instead of|rather than|ignore)\s+(?:the\s+)?(?:[\w.]*\.)?"
+CAUTION = re.compile(r"(heads up|careful|caution|cleansing|cannot be cast|can't cast|plain cast|qualifier|"
+                     r"expect blanks|time ?zone|pacific|eastern|local time|percentage|fraction|/ ?100|"
+                     r"same scale|different scale|format)", re.I)
+NO_SOURCE = re.compile(r"(nothing to backfill|no (?:direct )?source|never had|starts? fresh|net[- ]new|no equivalent|"
+                       r"not available in (?:the )?source|does not exist in (?:the )?source|no history|"
+                       r"never stored|does not store|not stored|never captured|never fed|never synced)", re.I)
+SENTENCES = re.compile(r"(?<=[.!?\n;])\s+")
 POSITIVE = re.compile(r"(maps? to|map\b|mapped|->|→|=|same as|equivalent|corresponds|use\b|is actually|comes from|source(d)? from|populate)", re.I)
 
 
@@ -219,17 +227,23 @@ class KnowledgeBase:
         return found
 
     def target_warnings(self, target_table: Table, target_column: Column | None) -> list[Evidence]:
-        """Passages saying the target has no counterpart in the source (net-new data)."""
-        terms = [target_table.short_name, target_table.logical_name]
-        if target_column is not None:
-            terms = [target_column.name, target_column.logical_name] + terms
+        """Passages saying the target has no counterpart in the source (net-new or derived data).
+
+        A passage about the target table counts for all of its columns, unless it names specific
+        columns, in which case it counts only for those."""
+        table_terms = [t for t in (target_table.short_name, target_table.logical_name) if t]
         found = []
         for chunk in self.chunks:
             if chunk.kind == "s2t" or not NO_SOURCE.search(chunk.text):
                 continue
-            if any(_mentions(chunk.text, t) for t in terms if t):
-                sentence = next((s.strip() for s in re.split(r"(?<=[.!?\n])\s+", chunk.text)
-                                 if NO_SOURCE.search(s)), chunk.text[:200])
+            text = chunk.text
+            named = [c for c in target_table.columns if _mentions(text, c.name)]
+            if target_column is not None and target_column in named:
+                applies = True
+            else:
+                applies = not named and any(_mentions(text, t) for t in table_terms)
+            if applies:
+                sentence = next((s.strip() for s in SENTENCES.split(text) if NO_SOURCE.search(s)), text[:200])
                 found.append(Evidence(chunk.kind, -0.8, f"{chunk.title} says this target has no source.",
                                       chunk.source, sentence[:300]))
         return found
@@ -237,9 +251,17 @@ class KnowledgeBase:
     def text_evidence(self, target_table: Table, target_column: Column | None,
                       source_table: Table, source_column: Column | None,
                       source_unique: bool = True) -> list[Evidence]:
+        """Judge each passage sentence by sentence.
+
+        Endorsements and "use X, not Y" statements count only in sentences that name the target;
+        deprecation statements count wherever they appear; cautions become checks, not votes."""
         found = []
-        target_terms = [target_table.short_name] + ([target_table.logical_name] if target_table.logical_name else [])
+        if target_column is not None:
+            target_terms = [t for t in (target_column.name, target_column.logical_name) if t]
+        else:
+            target_terms = [t for t in (target_table.short_name, target_table.logical_name) if t]
         source_ident = source_column.name if source_column else source_table.short_name
+        ident = re.escape(source_ident)
         for chunk in self.chunks:
             if chunk.kind == "s2t":
                 continue
@@ -248,30 +270,38 @@ class KnowledgeBase:
                 continue
             if source_column and not source_unique and not _mentions(text, source_table.short_name):
                 continue  # generic column name, needs its table in the same passage
-            if target_column is not None:
-                column_terms = [target_column.name] + ([target_column.logical_name]
-                                                       if target_column.logical_name else [])
-                if not any(_mentions(text, t) for t in column_terms):
+            chunk_names_target = any(_mentions(text, t) for t in target_terms)
+            verdict, best, caution = None, None, None
+            for sentence in (s.strip() for s in SENTENCES.split(text)):
+                if not _mentions(sentence, source_ident):
                     continue
-            elif not any(_mentions(text, t) for t in target_terms):
-                # table-level warnings (e.g. deprecated tables) apply regardless of target
-                pass
-            ident = re.escape(source_ident)
-            negative = re.search(NEGATIVE_BEFORE + ident + r"(?![\w])", text, re.I) or \
-                re.search(rf"(?<![\w]){ident}(?![\w])" + NEGATIVE_AFTER, text, re.I)
-            sentences = [s.strip() for s in re.split(r"(?<=[.!?\n])\s+", text) if _mentions(s, source_ident)]
-            sentence = next((s for s in sentences if POSITIVE.search(s)), sentences[0] if sentences else text[:200])
+                names_target = any(_mentions(sentence, t) for t in target_terms)
+                absolute = re.search(rf"(?<![\w]){ident}(?![\w])" + ABSOLUTE_AFTER, sentence, re.I) or \
+                    re.search(ABSOLUTE_BEFORE + ident + r"(?![\w])", sentence, re.I)
+                relative = re.search(RELATIVE_BEFORE + ident + r"(?![\w])", sentence, re.I)
+                if absolute or (relative and names_target):
+                    candidate = (-0.7, "warns against")
+                elif names_target and POSITIVE.search(sentence):
+                    candidate = (0.7, "endorses")
+                elif names_target:
+                    candidate = (0.45, "mentions")
+                else:
+                    candidate = None
+                if candidate and (verdict is None or abs(candidate[0]) > abs(verdict[0])
+                                  or (candidate[0] < 0 < verdict[0])):
+                    verdict, best = candidate, sentence
+                if CAUTION.search(sentence) and (names_target or chunk_names_target) and caution is None:
+                    caution = sentence
+            if verdict is None and chunk_names_target:
+                verdict, best = (0.25, "mentions"), next(
+                    (s for s in SENTENCES.split(text) if _mentions(s, source_ident)), text[:200])
             label = chunk.title
-            if negative:
-                found.append(Evidence(chunk.kind, -0.7, f"{label} warns against {source_ident}.",
-                                      chunk.source, sentence[:300]))
-            else:
-                target_named = target_column is not None or any(_mentions(text, t) for t in target_terms)
-                if not target_named:
-                    continue
-                endorsed = bool(POSITIVE.search(sentence))
-                verb = "endorses" if endorsed else "mentions"
-                found.append(Evidence(chunk.kind, 0.7 if endorsed else 0.45,
-                                      f"{label} {verb} {source_ident} for this target.",
-                                      chunk.source, sentence[:300]))
+            if verdict is not None:
+                strength, verb = verdict
+                found.append(Evidence(chunk.kind, strength, f"{label} {verb} {source_ident}"
+                                      + ("" if strength < 0 else " for this target") + ".",
+                                      chunk.source, best.strip()[:300]))
+            if caution is not None and (verdict is None or verdict[0] > 0):
+                found.append(Evidence(chunk.kind, 0.0, f"{label} notes a caveat about {source_ident}.",
+                                      chunk.source, caution.strip()[:300]))
         return found

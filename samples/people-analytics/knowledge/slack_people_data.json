@@ -1,0 +1,31 @@
+{
+  "channel": "people-data",
+  "messages": [
+    {
+      "ts": "1761000000.000100",
+      "user_name": "ana",
+      "text": "For employees.hire_date, do we use ORIG_HIRE_DT or LAST_HIRE_DT?"
+    },
+    {
+      "ts": "1761000300.000200",
+      "user_name": "ken",
+      "text": "hire_date should come from LAST_HIRE_DT, not ORIG_HIRE_DT. Tenure is measured from the current period of employment. ORIG_HIRE_DT maps to original_hire_date.",
+      "thread_ts": "1761000000.000100"
+    },
+    {
+      "ts": "1761259200.000100",
+      "user_name": "ken",
+      "text": "first_name in people analytics is the name people go by: use PREF_FIRST_NM, not LEGAL_FIRST_NM. Fall back to the legal name when the preferred name is blank."
+    },
+    {
+      "ts": "1761518400.000100",
+      "user_name": "ana",
+      "text": "engagement_score: engagement surveys run in a separate survey platform that never fed the HRIS, so there is no source for engagement_score."
+    },
+    {
+      "ts": "1761777600.000100",
+      "user_name": "ken",
+      "text": "fte = FTE_PCT / 100. The HRIS stores a percentage, the target stores a fraction."
+    }
+  ]
+}

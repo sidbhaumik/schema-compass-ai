@@ -43,7 +43,7 @@ def server(home, files):
     mirror = VolumeMirror("/Volumes/main/compass/data", home, client=SimpleNamespace(files=files))
     mirror.restore()
     ws = Workspace(home, sync=lambda p, deleted=False: mirror.remove(p) if deleted else mirror.push(p))
-    ws.seed_demo(ROOT / "demo")
+    ws.seed_demo(ROOT / "samples")
     return TestClient(create_app(ws))
 
 
@@ -63,12 +63,12 @@ class VolumeMirrorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as second:  # fresh, empty disk: like an app restart
             client = server(second, files)
             names = [p["name"] for p in client.get("/api/projects").json()]
-            self.assertEqual(names, ["Retail migration demo", "Wave 2"])  # demo not re-seeded
+            self.assertEqual(names, ["Retail acquisition", "Wave 2"])  # demo not re-seeded
             self.assertEqual(len(client.get(f"/api/projects/{pid}/feedback").json()), 1)
             client.delete(f"/api/projects/{new}")
         with tempfile.TemporaryDirectory() as third:
             client = server(third, files)
-            self.assertEqual([p["name"] for p in client.get("/api/projects").json()], ["Retail migration demo"])
+            self.assertEqual([p["name"] for p in client.get("/api/projects").json()], ["Retail acquisition"])
 
     def test_rejects_non_volume_path(self):
         with self.assertRaises(ValueError):
