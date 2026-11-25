@@ -1,7 +1,7 @@
 """Schema Compass: semantic source-to-target matching for data migrations."""
 import sys
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 if sys.version_info < (3, 11):
     raise SystemExit(

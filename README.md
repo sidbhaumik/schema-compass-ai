@@ -67,7 +67,7 @@ Once the virtual environment is active (your prompt shows `(.venv)`), `python` a
 Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) or another Docker engine. You don't need to clone anything: the prebuilt image runs on Intel/AMD and Apple Silicon.
 
 ```bash
-docker run -d --name schema-compass -p 8000:8000 -v compass-data:/data ghcr.io/sidbhaumik/schema-compass-ai:1.0.0
+docker run -d --name schema-compass -p 8000:8000 -v compass-data:/data ghcr.io/sidbhaumik/schema-compass-ai:1.1.0
 ```
 
 Open **http://localhost:8000**. Projects are stored in the `compass-data` volume and survive restarts and upgrades. Stop the container with `docker stop schema-compass`. To enable AI review, add `-e ANTHROPIC_API_KEY=sk-ant-...`. To upgrade, remove the container and run the same command with the new version, keeping the volume.

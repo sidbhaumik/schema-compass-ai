@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 (2026-11-24)
 
 ### Sample datasets
 - Three new fictional scenarios alongside the retail one:
